@@ -1,24 +1,25 @@
 import { supabase } from './supabaseClient.js';
-import { m1Data, actividadesDB, costosDB, latasData } from './state.js';
+import { m1Data, actividadesDB, costosDB, personalLogDB } from './state.js';
 import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
 import { guarM1, limpM1, rendM1, mapLote } from './m1.js';
 import {
-  guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal,
-  regLatas, rendLatas, initM2Listeners, mapActividad, mapLata,
+  guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2,
+  regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
 import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } from './m3.js';
-import { renderDash } from './dashboard.js';
+import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
 Object.assign(window, {
   showPage, openModal, closeModal, confirmModal,
   guarM1, limpM1,
-  guarM2, limpM2, sugerirEquipo, calcTotalPersonal, regLatas,
+  guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2,
+  regPersonalLog, rendPersonalLog,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
-  renderDash,
+  renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
 });
 
 // Header date
@@ -31,21 +32,20 @@ Object.assign(window, {
 document.getElementById('m1-fecha').value = new Date().toISOString().split('T')[0];
 document.getElementById('m1-hora').value = hn();
 document.getElementById('m2-ini').value = hn();
-document.getElementById('m2-lhora').value = hn();
 
 initModal();
 initM2Listeners();
 
 async function initApp() {
-  const [lotesRes, actRes, costosRes, latasRes, lookups] = await Promise.all([
+  const [lotesRes, actRes, costosRes, plogRes, lookups] = await Promise.all([
     supabase.from('lotes').select('*').order('created_at', { ascending: false }),
     supabase.from('actividades').select('*').order('created_at', { ascending: false }),
     supabase.from('costos').select('*'),
-    supabase.from('latas').select('*').order('created_at', { ascending: true }),
+    supabase.from('actividad_personal_log').select('*').order('created_at', { ascending: true }),
     fetchLookups(),
   ]);
 
-  const firstError = [lotesRes, actRes, costosRes, latasRes].find(r => r.error);
+  const firstError = [lotesRes, actRes, costosRes, plogRes].find(r => r.error);
   if (firstError) {
     toast('No se pudo conectar a la base de datos. Revisa js/config.js.', true);
     console.error('Error cargando datos iniciales:', firstError.error);
@@ -55,13 +55,13 @@ async function initApp() {
   m1Data.push(...lotesRes.data.map(mapLote));
   actividadesDB.push(...actRes.data.map(mapActividad));
   Object.assign(costosDB, Object.fromEntries(costosRes.data.map(c => [c.actividad_codigo, mapCosto(c)])));
-  latasData.push(...latasRes.data.map(mapLata));
+  plogRes.data.map(mapPersonalLog).forEach(p => { (personalLogDB[p.actId] ||= []).push(p); });
 
   populateLookupSelect('m1-prod', lookups.productos);
   populateLookupSelect('m2-proc', lookups.procesos);
   populateLookupSelect('m2-equipo', lookups.equipos);
 
-  rendM1(); rendM2(); rendLatas();
+  rendM1(); rendM2();
 }
 
 initApp();

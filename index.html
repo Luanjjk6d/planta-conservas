@@ -49,10 +49,7 @@
   <div class="layout">
     <div class="fs">
       <p class="stitle">Información general del proceso</p>
-      <div class="frow">
-        <div class="field"><label>Número de parte</label><input type="text" id="m1-np" placeholder="NP-0000"></div>
-        <div class="field"><label>Número de lote</label><input type="text" id="m1-nl" placeholder="LT-0000-00"></div>
-      </div>
+      <div class="field"><label>Número de parte</label><input type="text" id="m1-np" placeholder="NP-0000"></div>
       <div class="frow">
         <div class="field"><label>Fecha de inicio</label><input type="date" id="m1-fecha"></div>
         <div class="field"><label>Hora de inicio</label><input type="time" id="m1-hora"></div>
@@ -90,6 +87,13 @@
   <div class="layout">
     <div class="fs">
       <p class="stitle">Registrar actividad</p>
+
+      <div class="chart-target-row" id="m2-edit-banner" style="display:none">
+        <span class="chart-target-label">Editando actividad <strong id="m2-edit-banner-id"></strong></span>
+        <a href="#" onclick="limpM2();return false;" style="color:var(--b600);font-weight:600;font-size:12px">Cancelar edición</a>
+      </div>
+
+      <div class="field"><label>Número de batch</label><input type="text" id="m2-batch" placeholder="Ej: B-0001"></div>
 
       <div class="field">
         <label>Proceso / etapa</label>
@@ -133,7 +137,7 @@
       </div>
 
       <div class="divider"></div>
-      <p class="stitle">Personal asignado</p>
+      <p class="stitle">Personal asignado (inicial)</p>
       <div class="frow">
         <div class="field"><label>Personal hombre</label><input type="number" id="m2-h" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
         <div class="field"><label>Personal mujer</label><input type="number" id="m2-m" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
@@ -146,13 +150,21 @@
       </div>
 
       <div class="divider"></div>
-      <p class="stitle">Registro de latas cerradas</p>
-      <div class="frow">
-        <div class="field"><label>Hora de registro</label><input type="time" id="m2-lhora"></div>
-        <div class="field"><label>Latas acumuladas</label><input type="number" id="m2-latas" placeholder="0" min="0" step="1"></div>
+      <p class="stitle">Historial de personal por actividad</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">El personal de un proceso cambia mientras corre — registra cada cambio aquí. El costeo en Módulo 3 usa siempre el último registro.</p>
+      <div class="field">
+        <label>Actividad</label>
+        <select id="m2-plog-act" onchange="rendPersonalLog()">
+          <option value="">Seleccionar actividad...</option>
+        </select>
+      </div>
+      <div class="frow3">
+        <div class="field"><label>Hora</label><input type="time" id="m2-plog-hora"></div>
+        <div class="field"><label>Hombres</label><input type="number" id="m2-plog-h" placeholder="0" min="0"></div>
+        <div class="field"><label>Mujeres</label><input type="number" id="m2-plog-m" placeholder="0" min="0"></div>
       </div>
       <div class="bgrp" style="margin-top:.5rem">
-        <button class="btn-p" id="m2-latas-btn" onclick="regLatas()">Agregar registro →</button>
+        <button class="btn-p" id="m2-plog-btn" onclick="regPersonalLog()">Agregar registro →</button>
       </div>
     </div>
 
@@ -160,12 +172,12 @@
       <p class="stitle">Actividades registradas</p>
       <div id="list-m2"><div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Sin actividades registradas.<br><span style="font-size:12px">Cada registro genera un ID único disponible en el Módulo 3.</span></div></div>
       <div style="margin-top:2rem">
-        <p class="stitle">Registro de latas</p>
+        <p class="stitle">Historial de personal</p>
         <div class="latas-stats">
-          <div class="lstat"><div class="lstat-l">Total acumulado</div><div class="lstat-v" id="latas-total">0</div></div>
-          <div class="lstat"><div class="lstat-l">N° registros</div><div class="lstat-v" id="latas-count">0</div></div>
+          <div class="lstat"><div class="lstat-l">N° registros</div><div class="lstat-v" id="plog-count">0</div></div>
+          <div class="lstat"><div class="lstat-l">Personal actual</div><div class="lstat-v" id="plog-current">0</div></div>
         </div>
-        <div id="list-latas"><div class="empty" style="padding:1.5rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>Sin registros de latas.</div></div>
+        <div id="list-plog"><div class="empty" style="padding:1.5rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>Selecciona una actividad.</div></div>
       </div>
     </div>
   </div>
@@ -214,40 +226,38 @@
         Actualizar
       </button>
     </div>
+
+    <div class="date-nav">
+      <button class="btn-refresh" onclick="dashPrevDay()">‹ Día anterior</button>
+      <div class="date-nav-current">
+        <span id="dash-date-label"></span>
+        <input type="date" id="dash-date-input" onchange="dashJumpDate(this.value)">
+      </div>
+      <button class="btn-refresh" id="dash-next-btn" onclick="dashNextDay()">Día siguiente ›</button>
+      <button class="btn-refresh" onclick="dashGoToday()">Hoy</button>
+    </div>
+
     <div class="kpi-grid">
       <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="d-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
-      <div class="kpi green"><div class="kpi-l">Latas cerradas</div><div class="kpi-v" id="d-latas">0</div><div class="kpi-s">acumuladas</div></div>
       <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="d-merma">0</div><div class="kpi-s">kg generados</div></div>
+      <div class="kpi green"><div class="kpi-l">Rendimiento</div><div class="kpi-v" id="d-rend">0%</div><div class="kpi-s">salida / ingreso</div></div>
       <div class="kpi purple"><div class="kpi-l">Costo total</div><div class="kpi-v" id="d-costo">S/.0</div><div class="kpi-s">producción costeada</div></div>
     </div>
-    <div class="dg3">
+    <div class="dg4">
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Último lote</span><span class="dc-badge" id="d-lote-badge">—</span></div><div class="dc-body" id="d-lote-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Personal del turno</span><span class="dc-badge" id="d-pers-badge">0</span></div><div class="dc-body" id="d-pers-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Actividades costeadas</span><span class="dc-badge" id="d-cost-badge">0/0</span></div><div class="dc-body" id="d-cost-body"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Resumen del día</span><span class="dc-badge" id="d-resumen-badge">0</span></div><div class="dc-body" id="d-resumen-body"><div class="dc-empty">Sin datos</div></div></div>
     </div>
     <div class="dg">
-      <div class="dc"><div class="dc-hdr"><span class="dc-title">Actividad en planta</span><span class="dc-badge" id="d-act-badge">0</span></div><div class="dc-body" id="d-act-body"><div class="dc-empty">Sin procesos</div></div></div>
-      <div class="dc"><div class="dc-hdr"><span class="dc-title">Latas — línea de tiempo</span><span class="dc-badge" id="d-lt-badge">0</span></div><div class="dc-body" id="d-lt-body"><div class="dc-empty">Sin registros</div></div></div>
-    </div>
-    <div class="dg">
-      <div class="dc"><div class="dc-hdr"><span class="dc-title">Avance de latas</span><span class="dc-badge" id="d-pie-pct">0%</span></div>
-        <div class="dc-body">
-          <div class="chart-target-row"><span class="chart-target-label">Meta:</span><input type="number" class="chart-target-input" id="meta-latas" placeholder="Ej: 10000" min="1" oninput="renderDash()"><span class="chart-target-sub">120 g / lata</span></div>
-          <div class="pie-wrap">
-            <canvas id="chart-pie" width="150" height="150" style="flex-shrink:0"></canvas>
-            <div class="pie-legend">
-              <div class="pl-item"><span class="pl-dot" style="background:var(--b400)"></span><span class="pl-label">Cerradas</span><span class="pl-val" id="pl-cerradas">0</span></div>
-              <div class="pl-item"><span class="pl-dot" style="background:var(--g200)"></span><span class="pl-label">Pendientes</span><span class="pl-val" id="pl-pend">—</span></div>
-              <div class="pl-item"><span class="pl-dot" style="background:#4ade80"></span><span class="pl-label">Peso (kg)</span><span class="pl-val" id="pl-kg">0</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="dc"><div class="dc-hdr"><span class="dc-title">Latas por registro</span><span class="dc-badge" id="d-bar-total">0</span></div><div class="dc-body"><div style="height:210px"><canvas id="chart-bar"></canvas></div></div></div>
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Línea de tiempo de actividades</span><span class="dc-badge" id="d-tl-badge">0</span></div><div class="dc-body" id="d-tl-body"><div class="dc-empty">Sin actividades este día</div></div></div>
     </div>
     <div class="dg">
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Merma por proceso</span></div><div class="dc-body" id="d-merma-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Rendimiento de pesos</span></div><div class="dc-body" id="d-pesos-body"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tendencia — últimos 7 días</span></div><div class="dc-body"><div style="height:220px"><canvas id="chart-trend"></canvas></div></div></div>
     </div>
     <div class="updated" id="d-updated"></div>
   </div>

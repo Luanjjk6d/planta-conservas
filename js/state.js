@@ -4,4 +4,4 @@
 export const m1Data = [];        // registros Módulo 1 (tabla: lotes)
 export const actividadesDB = []; // registros Módulo 2 (tabla: actividades)
 export const costosDB = {};      // { codigo_actividad: {...} } (tabla: costos)
-export const latasData = [];     // registros de latas (tabla: latas)
+export const personalLogDB = {}; // { codigo_actividad: [{hora,h,m}, ...] } (tabla: actividad_personal_log)

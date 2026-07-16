@@ -5,6 +5,9 @@ export const mHM = n => `${Math.floor(n / 60)}h ${n % 60}m`;
 export const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 export const fmt = n => `S/. ${parseFloat(n || 0).toFixed(2)}`;
 export const fmtN = n => parseFloat(n || 0).toFixed(2);
+export const localDateStr = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const shiftDate = (dateStr, days) => { const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + days); return localDateStr(d); };
+export const fDateLong = dateStr => { const [y, m, d] = dateStr.split('-'); const dow = new Date(dateStr + 'T00:00:00').getDay(); const ds = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], ms = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; return `${ds[dow]} ${parseInt(d)} ${ms[parseInt(m) - 1]} ${y}`; };
 
 export function toast(msg, isError = false) {
   document.getElementById('toast-msg').textContent = msg;

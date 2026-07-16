@@ -1,25 +1,64 @@
-import { m1Data, actividadesDB, costosDB, latasData } from './state.js';
-import { esc, fmt, mHM } from './utils.js';
+import { supabase } from './supabaseClient.js';
+import { esc, fmt, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } from './utils.js';
 import { stL } from './constants.js';
+import { mapLote } from './m1.js';
+import { mapActividad } from './m2.js';
+import { mapCosto } from './m3.js';
 
-let chartPie = null, chartBar = null;
+let chartTrend = null;
+let currentDashDate = localDateStr();
+let dashLotes = [], dashAct = [], dashCostos = {};
 
-export function renderDash() {
-  const totMP = m1Data.reduce((s, r) => s + r.peso, 0);
-  const totLatas = latasData.reduce((s, r) => s + r.latas, 0);
-  const totMerma = actividadesDB.reduce((s, r) => s + (r.merma || 0), 0);
-  const totCosto = Object.values(costosDB).reduce((s, c) => s + (c.total || 0), 0);
+async function fetchDashboardData(dateStr) {
+  const [lotesRes, actRes] = await Promise.all([
+    supabase.from('lotes').select('*').eq('fecha', dateStr).order('created_at', { ascending: false }),
+    supabase.from('actividades').select('*').eq('fecha', dateStr).order('hora_inicio', { ascending: true }),
+  ]);
+  if (lotesRes.error || actRes.error) { toast('Error al cargar el dashboard.', true); return null; }
+  const lotes = lotesRes.data.map(mapLote);
+  const act = actRes.data.map(mapActividad);
+  let costos = {};
+  if (act.length) {
+    const { data, error } = await supabase.from('costos').select('*').in('actividad_codigo', act.map(a => a.id));
+    if (!error) costos = Object.fromEntries(data.map(c => [c.actividad_codigo, mapCosto(c)]));
+  }
+  return { lotes, act, costos };
+}
+
+function updateDateNav() {
+  document.getElementById('dash-date-label').textContent = fDateLong(currentDashDate);
+  document.getElementById('dash-date-input').value = currentDashDate;
+  document.getElementById('dash-next-btn').disabled = currentDashDate >= localDateStr();
+}
+
+export function dashPrevDay() { renderDash(shiftDate(currentDashDate, -1)); }
+export function dashNextDay() { const n = shiftDate(currentDashDate, 1); if (n <= localDateStr()) renderDash(n); }
+export function dashGoToday() { renderDash(localDateStr()); }
+export function dashJumpDate(v) { if (v) renderDash(v); }
+
+export async function renderDash(dateStr = currentDashDate) {
+  const result = await fetchDashboardData(dateStr);
+  if (!result) return;
+  currentDashDate = dateStr;
+  dashLotes = result.lotes; dashAct = result.act; dashCostos = result.costos;
+  updateDateNav();
+
+  const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
+  const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);
+  const totCosto = Object.values(dashCostos).reduce((s, c) => s + (c.total || 0), 0);
+  const ti = dashAct.reduce((s, r) => s + r.ping, 0), to = dashAct.reduce((s, r) => s + r.psal, 0);
+  const rend = ti > 0 ? (to / ti * 100) : 0;
 
   document.getElementById('d-mp').textContent = totMP.toFixed(1);
-  document.getElementById('d-latas').textContent = totLatas.toLocaleString();
   document.getElementById('d-merma').textContent = totMerma.toFixed(1);
+  document.getElementById('d-rend').textContent = rend.toFixed(1) + '%';
   document.getElementById('d-costo').textContent = fmt(totCosto);
 
-  // Último lote
+  // Último lote del día
   const lb = document.getElementById('d-lote-body'), lbadge = document.getElementById('d-lote-badge');
-  if (!m1Data.length) { lb.innerHTML = '<div class="dc-empty">Sin datos</div>'; lbadge.textContent = '—'; }
+  if (!dashLotes.length) { lb.innerHTML = '<div class="dc-empty">Sin datos</div>'; lbadge.textContent = '—'; }
   else {
-    const r = m1Data[0]; lbadge.textContent = r.nl;
+    const r = dashLotes[0]; lbadge.textContent = r.np;
     lb.innerHTML = `<div class="di-row"><span class="di-l">N° parte</span><span class="di-v" style="font-family:'DM Mono',monospace">${esc(r.np)}</span></div>
     <div class="di-row"><span class="di-l">Producto</span><span class="di-v">${esc(r.prod)}</span></div>
     <div class="di-row"><span class="di-l">Especie</span><span class="di-v">${esc(r.especie) || '—'}</span></div>
@@ -28,9 +67,9 @@ export function renderDash() {
     <div class="di-row"><span class="di-l">Turno</span><span class="di-v">${esc(r.turno) || '—'}</span></div>`;
   }
 
-  // Personal
-  const totH = actividadesDB.reduce((s, r) => s + r.h, 0);
-  const totM = actividadesDB.reduce((s, r) => s + r.m, 0);
+  // Personal del turno
+  const totH = dashAct.reduce((s, r) => s + r.h, 0);
+  const totM = dashAct.reduce((s, r) => s + r.m, 0);
   const totP = totH + totM;
   const pb = document.getElementById('d-pers-body'); document.getElementById('d-pers-badge').textContent = totP;
   if (!totP) { pb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
@@ -43,12 +82,12 @@ export function renderDash() {
   }
 
   // Actividades costeadas
-  const costeadas = Object.keys(costosDB).length;
-  document.getElementById('d-cost-badge').textContent = `${costeadas}/${actividadesDB.length}`;
+  const costeadas = Object.keys(dashCostos).length;
+  document.getElementById('d-cost-badge').textContent = `${costeadas}/${dashAct.length}`;
   const cb = document.getElementById('d-cost-body');
-  if (!actividadesDB.length) { cb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
+  if (!dashAct.length) { cb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    const vals = Object.values(costosDB);
+    const vals = Object.values(dashCostos);
     const totEsm = vals.reduce((s, c) => s + (c.cEsm || 0), 0);
     const totSvc = vals.reduce((s, c) => s + (c.cSvc || 0), 0);
     const totMaq = vals.reduce((s, c) => s + (c.cMaq || 0), 0);
@@ -62,64 +101,104 @@ export function renderDash() {
       <div class="di-row"><span class="di-l">Agua, vapor y elect.</span><span class="di-v">${fmt(totAVE)}</span></div>
       <div class="di-row"><span class="di-l">Otros costos</span><span class="di-v">${fmt(totOtros)}</span></div>
       <div class="di-row" style="border-top:2px solid var(--b100);margin-top:4px;padding-top:8px"><span class="di-l" style="font-weight:600;color:var(--b800)">TOTAL</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b600)">${fmt(grand)}</span></div>
-      ${actividadesDB.map(a => { const c = costosDB[a.id]; return `<div class="di-row"><span class="di-l" style="font-size:11px">${esc(a.proc)}</span><span class="di-v" style="font-size:11px">${c ? fmt(c.total) : '<span style="color:var(--orange)">Sin costear</span>'}</span></div>`; }).join('')}`;
+      ${dashAct.map(a => { const c = dashCostos[a.id]; return `<div class="di-row"><span class="di-l" style="font-size:11px">${esc(a.proc)}</span><span class="di-v" style="font-size:11px">${c ? fmt(c.total) : '<span style="color:var(--orange)">Sin costear</span>'}</span></div>`; }).join('')}`;
   }
 
-  // Actividad
-  const ab = document.getElementById('d-act-body'); document.getElementById('d-act-badge').textContent = actividadesDB.length;
-  if (!actividadesDB.length) { ab.innerHTML = '<div class="dc-empty">Sin procesos</div>'; }
-  else { ab.innerHTML = [...actividadesDB].reverse().map(r => `<div class="dproc"><div><div class="dproc-name">${esc(r.proc)} <span style="font-size:10px;color:var(--muted)">· ${esc(r.equipo)}</span></div><div class="dproc-times">${r.ini} → ${r.fin}${r.durMin ? ' · ' + mHM(r.durMin) : ''}</div></div><span class="sbadge ${r.estado}" style="font-size:10px">${stL[r.estado]}</span></div>`).join(''); }
-
-  // Latas timeline
-  const lt = document.getElementById('d-lt-body'); document.getElementById('d-lt-badge').textContent = latasData.length;
-  if (!latasData.length) { lt.innerHTML = '<div class="dc-empty">Sin registros</div>'; }
+  // Resumen del día
+  const porEstado = { op: 0, det: 0, fin: 0 };
+  dashAct.forEach(a => { porEstado[a.estado] = (porEstado[a.estado] || 0) + (a.durMin || 0); });
+  document.getElementById('d-resumen-badge').textContent = dashAct.length;
+  const rb = document.getElementById('d-resumen-body');
+  if (!dashAct.length) { rb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    const mx = Math.max(...latasData.map(r => r.latas));
-    lt.innerHTML = latasData.map(r => `<div class="lt-row"><span class="lt-hora">${r.hora}</span><div class="lt-bw"><div class="lt-b" style="width:${Math.round(r.latas / mx * 100)}%"></div></div><span class="lt-qty">${r.latas.toLocaleString()}</span></div>`).join('');
+    rb.innerHTML = `<div class="di-row"><span class="di-l">N° de procesos</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b800)">${dashAct.length}</span></div>
+    <div class="di-row"><span class="di-l">Tiempo en operación</span><span class="di-v" style="color:var(--green)">${mHM(porEstado.op)}</span></div>
+    <div class="di-row"><span class="di-l">Tiempo detenido</span><span class="di-v" style="color:var(--orange)">${mHM(porEstado.det)}</span></div>
+    <div class="di-row"><span class="di-l">Tiempo finalizado</span><span class="di-v">${mHM(porEstado.fin)}</span></div>`;
   }
 
-  // Pie chart
-  const meta = parseInt(document.getElementById('meta-latas').value) || 0;
-  const pend = meta > totLatas ? meta - totLatas : 0;
-  const pct = meta > 0 ? Math.min(100, Math.round(totLatas / meta * 100)) : 0;
-  document.getElementById('d-pie-pct').textContent = meta > 0 ? `${pct}%` : 'Sin meta';
-  document.getElementById('pl-cerradas').textContent = totLatas.toLocaleString();
-  document.getElementById('pl-pend').textContent = meta > 0 ? pend.toLocaleString() : '—';
-  document.getElementById('pl-kg').textContent = (totLatas * .12).toFixed(1) + ' kg';
-  if (chartPie) { chartPie.destroy(); chartPie = null; }
-  const ctxP = document.getElementById('chart-pie').getContext('2d');
-  chartPie = new Chart(ctxP, { type: 'doughnut', data: { labels: ['Cerradas', 'Pendientes'], datasets: [{ data: meta > 0 ? [totLatas, pend] : [totLatas || 1, 0], backgroundColor: ['#378ADD', '#D8E2EF'], borderWidth: 0, hoverOffset: 5 }] }, options: { cutout: '72%', animation: { duration: 600 }, plugins: { legend: { display: false } } }, plugins: [{ id: 'ct', afterDraw(ch) { const { ctx, chartArea: { width: w, height: h, left: l, top: t } } = ch; ctx.save(); const cx = l + w / 2, cy = t + h / 2; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 20px DM Mono,monospace'; ctx.fillStyle = '#042C53'; ctx.fillText(meta > 0 ? `${pct}%` : totLatas.toLocaleString(), cx, cy - 7); ctx.font = '11px DM Sans,sans-serif'; ctx.fillStyle = '#5A7FA8'; ctx.fillText(meta > 0 ? 'avance' : 'latas', cx, cy + 11); ctx.restore(); } }] });
+  renderTimeline();
 
-  // Bar chart
-  document.getElementById('d-bar-total').textContent = totLatas.toLocaleString() + ' latas';
-  if (chartBar) { chartBar.destroy(); chartBar = null; }
-  const ctxB = document.getElementById('chart-bar').getContext('2d');
-  if (latasData.length) {
-    let acc = 0; const acum = latasData.map(r => { acc += r.latas; return acc; });
-    chartBar = new Chart(ctxB, { type: 'bar', data: { labels: latasData.map(r => r.hora), datasets: [{ label: 'Latas', data: latasData.map(r => r.latas), backgroundColor: 'rgba(55,138,221,.7)', borderColor: '#185FA5', borderWidth: 1.5, borderRadius: 5, order: 2 }, { label: 'Acumulado', data: acum, type: 'line', borderColor: '#4ade80', borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#4ade80', fill: false, tension: .3, order: 1 }, ...(meta > 0 ? [{ label: 'Meta', data: latasData.map(() => meta), type: 'line', borderColor: '#a78bfa', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false, order: 0 }] : [])], }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 11, padding: 10 } } }, scales: { x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 11 }, color: '#5A7FA8' } }, y: { grid: { color: '#EEF2F7' }, ticks: { font: { family: 'DM Sans', size: 11 }, color: '#5A7FA8' }, beginAtZero: true } } } });
-  }
-
-  // Merma
+  // Merma por proceso
   const mb2 = document.getElementById('d-merma-body');
-  const cm = actividadesDB.filter(r => r.merma > 0);
+  const cm = dashAct.filter(r => r.merma > 0);
   if (!cm.length) { mb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
     const mx = Math.max(...cm.map(r => r.merma));
     mb2.innerHTML = cm.map(r => `<div class="merma-item"><div class="merma-hd"><span style="font-size:12px;font-weight:500;color:var(--text)">${esc(r.proc)}</span><span style="font-size:12px;font-weight:600;color:var(--orange)">${r.merma.toFixed(1)} kg</span></div><div class="merma-bg"><div class="merma-fill" style="width:${Math.round(r.merma / mx * 100)}%"></div></div></div>`).join('');
   }
 
-  // Pesos
+  // Rendimiento de pesos
   const pb2 = document.getElementById('d-pesos-body');
-  const ti = actividadesDB.reduce((s, r) => s + r.ping, 0), to = actividadesDB.reduce((s, r) => s + r.psal, 0);
   if (!ti) { pb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    const rend = ti > 0 ? (to / ti * 100).toFixed(1) : 0;
+    const rendPct = ti > 0 ? (to / ti * 100).toFixed(1) : 0;
     pb2.innerHTML = `<div class="di-row"><span class="di-l">Peso ingreso total</span><span class="di-v">${ti.toFixed(1)} kg</span></div>
     <div class="di-row"><span class="di-l">Peso salida total</span><span class="di-v">${to.toFixed(1)} kg</span></div>
     <div class="di-row"><span class="di-l">Merma total</span><span class="di-v" style="color:var(--orange);font-weight:600">${(ti - to).toFixed(1)} kg</span></div>
-    <div class="di-row"><span class="di-l">Rendimiento</span><span class="di-v" style="color:var(--green);font-weight:700;font-size:18px">${rend}%</span></div>
-    <div style="margin-top:10px;background:var(--g100);border-radius:999px;height:9px;overflow:hidden"><div style="height:100%;width:${Math.min(100, parseFloat(rend))}%;background:linear-gradient(90deg,#4ade80,#16a34a);border-radius:999px"></div></div>`;
+    <div class="di-row"><span class="di-l">Rendimiento</span><span class="di-v" style="color:var(--green);font-weight:700;font-size:18px">${rendPct}%</span></div>
+    <div style="margin-top:10px;background:var(--g100);border-radius:999px;height:9px;overflow:hidden"><div style="height:100%;width:${Math.min(100, parseFloat(rendPct))}%;background:linear-gradient(90deg,#4ade80,#16a34a);border-radius:999px"></div></div>`;
   }
 
   document.getElementById('d-updated').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
+
+  await renderTrendChart();
+}
+
+function renderTimeline() {
+  const el = document.getElementById('d-tl-body');
+  document.getElementById('d-tl-badge').textContent = dashAct.length;
+  if (!dashAct.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día</div>'; return; }
+  el.innerHTML = dashAct.map(a => {
+    const start = tMin(a.ini);
+    const end = a.fin !== '—' ? tMin(a.fin) : Math.min(1439, start + (a.durMin || 15));
+    const left = (start / 1440 * 100).toFixed(2), width = Math.max(0.3, (end - start) / 1440 * 100).toFixed(2);
+    return `<div class="tl-row">
+      <div class="tl-label"><strong>${esc(a.proc)}</strong> · ${esc(a.equipo)}${a.batch ? ' · ' + esc(a.batch) : ''}<br>${a.ini} → ${a.fin}</div>
+      <div class="tl-track"><div class="tl-bar ${a.estado}" style="left:${left}%;width:${width}%"></div></div>
+    </div>`;
+  }).join('') + `<div class="tl-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>`;
+}
+
+async function renderTrendChart() {
+  const start = shiftDate(currentDashDate, -6);
+  const { data: actRows, error } = await supabase.from('actividades')
+    .select('codigo, fecha, peso_ingreso, peso_salida').gte('fecha', start).lte('fecha', currentDashDate);
+  if (error) return;
+  const codigos = actRows.map(r => r.codigo);
+  const costRows = codigos.length
+    ? (await supabase.from('costos').select('actividad_codigo, total').in('actividad_codigo', codigos)).data || []
+    : [];
+  const costByCod = Object.fromEntries(costRows.map(c => [c.actividad_codigo, parseFloat(c.total) || 0]));
+  const days = Array.from({ length: 7 }, (_, i) => shiftDate(start, i));
+  const rendArr = [], costoArr = [];
+  days.forEach(d => {
+    const rows = actRows.filter(r => r.fecha === d);
+    const ing = rows.reduce((s, r) => s + (parseFloat(r.peso_ingreso) || 0), 0);
+    const sal = rows.reduce((s, r) => s + (parseFloat(r.peso_salida) || 0), 0);
+    rendArr.push(ing > 0 ? +(sal / ing * 100).toFixed(1) : null);
+    costoArr.push(rows.reduce((s, r) => s + (costByCod[r.codigo] || 0), 0));
+  });
+
+  if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
+  const ctx = document.getElementById('chart-trend').getContext('2d');
+  chartTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days.map(d => d.slice(5)),
+      datasets: [
+        { label: 'Rendimiento %', data: rendArr, borderColor: '#16a34a', backgroundColor: '#16a34a', yAxisID: 'y', tension: .3, spanGaps: true },
+        { label: 'Costo total (S/.)', data: costoArr, borderColor: '#7c3aed', backgroundColor: '#7c3aed', yAxisID: 'y1', tension: .3 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 11, padding: 10 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5A7FA8' } },
+        y: { position: 'left', title: { display: true, text: '%' }, ticks: { font: { size: 10 } } },
+        y1: { position: 'right', title: { display: true, text: 'S/.' }, grid: { drawOnChartArea: false }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
 }

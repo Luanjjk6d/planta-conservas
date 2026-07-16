@@ -5,7 +5,6 @@ import { hn, fF, esc, toast } from './utils.js';
 export function mapLote(row) {
   return {
     np: row.numero_parte,
-    nl: row.numero_lote,
     fecha: row.fecha,
     hora: (row.hora || '').slice(0, 5),
     prod: row.producto,
@@ -18,18 +17,16 @@ export function mapLote(row) {
 
 export async function guarM1() {
   const np = document.getElementById('m1-np').value.trim();
-  const nl = document.getElementById('m1-nl').value.trim();
   const fecha = document.getElementById('m1-fecha').value;
   const prod = document.getElementById('m1-prod').value;
   const sup = document.getElementById('m1-sup').value.trim();
   const peso = document.getElementById('m1-peso').value;
-  if (!np || !nl || !fecha || !prod || !sup || !peso) { toast('Completa los campos obligatorios.'); return; }
+  if (!np || !fecha || !prod || !sup || !peso) { toast('Completa los campos obligatorios.'); return; }
 
   const btn = document.getElementById('m1-save-btn');
   btn.disabled = true;
   const record = {
     numero_parte: np,
-    numero_lote: nl,
     fecha,
     hora: document.getElementById('m1-hora').value,
     producto: prod,
@@ -47,7 +44,7 @@ export async function guarM1() {
 }
 
 export function limpM1() {
-  ['m1-np', 'm1-nl', 'm1-especie', 'm1-peso', 'm1-sup'].forEach(id => document.getElementById(id).value = '');
+  ['m1-np', 'm1-especie', 'm1-peso', 'm1-sup'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m1-prod').selectedIndex = 0;
   document.getElementById('m1-turno').selectedIndex = 0;
   document.getElementById('m1-fecha').value = new Date().toISOString().split('T')[0];
@@ -59,7 +56,7 @@ export function rendM1() {
   if (!m1Data.length) { el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>Sin registros aún.</div>'; return; }
   el.innerHTML = m1Data.map((r, i) => `<div class="card">
     <div class="card-head"><div><div class="card-title">${esc(r.sup)}</div><div class="card-meta">${fF(r.fecha)} · ${r.hora}${r.turno ? ' · ' + r.turno.split(' ')[0] : ''}</div></div><span class="card-num">#${m1Data.length - i}</span></div>
-    <div class="pill"><strong>NP:</strong> ${esc(r.np)} &nbsp;|&nbsp; <strong>Lote:</strong> ${esc(r.nl)}</div>
+    <div class="pill"><strong>NP:</strong> ${esc(r.np)}</div>
     <div class="pill" style="margin-top:4px"><strong>Producto:</strong> ${esc(r.prod)}${r.especie ? ' · <strong>Especie:</strong> ' + esc(r.especie) : ''}</div>
     <div class="cstats" style="grid-template-columns:1fr 1fr 1fr"><div><div class="cs-v">${r.peso} kg</div><div class="cs-l">Mat. prima</div></div><div><div class="cs-v">${esc(r.sup)}</div><div class="cs-l">Supervisor</div></div><div><div class="cs-v">${r.turno ? r.turno.split(' ')[0] : '—'}</div><div class="cs-l">Turno</div></div></div>
   </div>`).join('');
