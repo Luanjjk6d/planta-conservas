@@ -138,11 +138,17 @@
 
       <div class="divider"></div>
       <p class="stitle">Personal asignado (inicial)</p>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:.5rem;line-height:1.5">Género (para el Dashboard) y empresa (para el costeo en Módulo 3) se registran por separado.</p>
       <div class="frow">
         <div class="field"><label>Personal hombre</label><input type="number" id="m2-h" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
         <div class="field"><label>Personal mujer</label><input type="number" id="m2-m" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
       </div>
       <div class="field"><label>Total personal (calculado)</label><input type="number" id="m2-total-p" readonly placeholder="0"></div>
+      <div class="frow">
+        <div class="field"><label>Personal Esmeralda</label><input type="number" id="m2-esm" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
+        <div class="field"><label>Personal Service</label><input type="number" id="m2-svc" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
+      </div>
+      <div class="field"><label>Total por empresa (calculado)</label><input type="number" id="m2-total-emp" readonly placeholder="0"></div>
 
       <div class="bgrp">
         <button class="btn-s" onclick="limpM2()">Limpiar</button>
@@ -162,6 +168,10 @@
         <div class="field"><label>Hora</label><input type="time" id="m2-plog-hora"></div>
         <div class="field"><label>Hombres</label><input type="number" id="m2-plog-h" placeholder="0" min="0"></div>
         <div class="field"><label>Mujeres</label><input type="number" id="m2-plog-m" placeholder="0" min="0"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Esmeralda</label><input type="number" id="m2-plog-esm" placeholder="0" min="0"></div>
+        <div class="field"><label>Service</label><input type="number" id="m2-plog-svc" placeholder="0" min="0"></div>
       </div>
       <div class="bgrp" style="margin-top:.5rem">
         <button class="btn-p" id="m2-plog-btn" onclick="regPersonalLog()">Agregar registro →</button>

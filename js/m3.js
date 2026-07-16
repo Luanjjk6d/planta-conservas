@@ -77,9 +77,12 @@ export function selectActividad(id) {
           <div><div class="cd-item-l">Peso ingreso</div><div class="cd-item-v">${act.ping} kg</div></div>
           <div><div class="cd-item-l">Peso salida</div><div class="cd-item-v">${act.psal} kg</div></div>
           <div><div class="cd-item-l">Merma</div><div class="cd-item-v" style="color:var(--orange)">${act.merma.toFixed(1)} kg</div></div>
-          <div><div class="cd-item-l">Personal H (Esmeralda)</div><div class="cd-item-v">${act.h}</div></div>
-          <div><div class="cd-item-l">Personal M (Service)</div><div class="cd-item-v">${act.m}</div></div>
+          <div><div class="cd-item-l">Personal Hombre</div><div class="cd-item-v">${act.h}</div></div>
+          <div><div class="cd-item-l">Personal Mujer</div><div class="cd-item-v">${act.m}</div></div>
           <div><div class="cd-item-l">Total personal</div><div class="cd-item-v" style="font-weight:700;color:var(--b800)">${act.totalPersonal}</div></div>
+          <div><div class="cd-item-l">Personal Esmeralda</div><div class="cd-item-v">${act.esm}</div></div>
+          <div><div class="cd-item-l">Personal Service</div><div class="cd-item-v">${act.svc}</div></div>
+          <div><div class="cd-item-l">Total por empresa</div><div class="cd-item-v" style="font-weight:700;color:var(--b800)">${act.esm + act.svc}</div></div>
         </div>
       </div>
 
@@ -90,12 +93,12 @@ export function selectActividad(id) {
           <div class="cd-input-row">
             <label>S/. Personal Esmeralda / hora</label>
             <input type="number" id="ci-esm" value="${prev.costoEsm || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.h} personas × ${act.durHoras.toFixed(2)} h</span>
+            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.esm} personas × ${act.durHoras.toFixed(2)} h</span>
           </div>
           <div class="cd-input-row">
             <label>S/. Personal Service / hora</label>
             <input type="number" id="ci-svc" value="${prev.costoSvc || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.m} personas × ${act.durHoras.toFixed(2)} h</span>
+            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.svc} personas × ${act.durHoras.toFixed(2)} h</span>
           </div>
           <div class="cd-input-row">
             <label>S/. Costo de máquina / hora</label>
@@ -143,8 +146,8 @@ export function selectActividad(id) {
 
 function _renderBreakdownRows(c, act) {
   const rows = [
-    { l: 'Personal Esmeralda', f: `${act.h}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoEsm || 0).toFixed(2)}/h`, v: c.cEsm },
-    { l: 'Personal Service', f: `${act.m}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoSvc || 0).toFixed(2)}/h`, v: c.cSvc },
+    { l: 'Personal Esmeralda', f: `${act.esm}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoEsm || 0).toFixed(2)}/h`, v: c.cEsm },
+    { l: 'Personal Service', f: `${act.svc}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoSvc || 0).toFixed(2)}/h`, v: c.cSvc },
     { l: 'Máquina / Equipo', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoMaq || 0).toFixed(2)}/h`, v: c.cMaq },
     { l: 'Agua, vapor y elec.', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAVE || 0).toFixed(2)}/h`, v: c.cAVE },
     { l: 'Otros costos', f: 'Monto fijo', v: c.costoOtros || 0 },
@@ -166,8 +169,8 @@ export function calcCostoDetalle(id) {
   const costoOtros = parseFloat(document.getElementById('ci-otros').value) || 0;
 
   const h = act.durHoras;
-  const cEsm = act.h * h * costoEsm;
-  const cSvc = act.m * h * costoSvc;
+  const cEsm = act.esm * h * costoEsm;
+  const cSvc = act.svc * h * costoSvc;
   const cMaq = h * costoMaq;
   const cAVE = h * costoAVE;
   const total = cEsm + cSvc + cMaq + cAVE + costoOtros;

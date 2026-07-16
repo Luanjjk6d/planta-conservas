@@ -23,12 +23,21 @@ export function mapActividad(row) {
     h: row.personal_hombres,
     m: row.personal_mujeres,
     totalPersonal: row.total_personal,
+    esm: row.personal_esmeralda,
+    svc: row.personal_service,
     estado: row.estado,
   };
 }
 
 export function mapPersonalLog(row) {
-  return { actId: row.actividad_codigo, hora: (row.hora || '').slice(0, 5), h: row.personal_hombres, m: row.personal_mujeres };
+  return {
+    actId: row.actividad_codigo,
+    hora: (row.hora || '').slice(0, 5),
+    h: row.personal_hombres,
+    m: row.personal_mujeres,
+    esm: row.personal_esmeralda,
+    svc: row.personal_service,
+  };
 }
 
 export function sugerirEquipo() {
@@ -54,6 +63,9 @@ export function calcTotalPersonal() {
   const h = parseInt(document.getElementById('m2-h').value) || 0;
   const m = parseInt(document.getElementById('m2-m').value) || 0;
   document.getElementById('m2-total-p').value = h + m;
+  const esm = parseInt(document.getElementById('m2-esm').value) || 0;
+  const svc = parseInt(document.getElementById('m2-svc').value) || 0;
+  document.getElementById('m2-total-emp').value = esm + svc;
 }
 
 export function initM2Listeners() {
@@ -77,6 +89,8 @@ export function editM2(id) {
   document.getElementById('m2-estado').value = act.estado;
   document.getElementById('m2-h').value = act.h || '';
   document.getElementById('m2-m').value = act.m || '';
+  document.getElementById('m2-esm').value = act.esm || '';
+  document.getElementById('m2-svc').value = act.svc || '';
   calcTotalPersonal();
   document.getElementById('m2-save-btn').textContent = 'Actualizar actividad →';
   document.getElementById('m2-edit-banner').style.display = 'flex';
@@ -95,6 +109,8 @@ export async function guarM2() {
   const psal = parseFloat(document.getElementById('m2-psal').value) || 0;
   const h = parseInt(document.getElementById('m2-h').value) || 0;
   const m = parseInt(document.getElementById('m2-m').value) || 0;
+  const esm = parseInt(document.getElementById('m2-esm').value) || 0;
+  const svc = parseInt(document.getElementById('m2-svc').value) || 0;
 
   const btn = document.getElementById('m2-save-btn');
   btn.disabled = true;
@@ -111,6 +127,8 @@ export async function guarM2() {
     personal_hombres: h,
     personal_mujeres: m,
     total_personal: h + m,
+    personal_esmeralda: esm,
+    personal_service: svc,
     estado,
   };
 
@@ -136,7 +154,7 @@ export async function guarM2() {
 }
 
 export function limpM2() {
-  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-h', 'm2-m', 'm2-dur', 'm2-total-p'].forEach(id => document.getElementById(id).value = '');
+  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-h', 'm2-m', 'm2-dur', 'm2-total-p', 'm2-esm', 'm2-svc', 'm2-total-emp'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
@@ -161,8 +179,9 @@ export function rendM2() {
       </div>
     </div>
     ${r.ping || r.psal ? `<div class="pill"><strong>Ingreso:</strong> ${r.ping} kg → <strong>Salida:</strong> ${r.psal} kg${r.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + r.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}
-    <div style="display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--muted);align-items:center">
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap">
       <span>H: ${r.h} · M: ${r.m} · Total: <strong style="color:var(--text)">${r.totalPersonal}</strong></span>
+      <span>Esmeralda: ${r.esm} · Service: ${r.svc}</span>
       ${costosDB[r.id] ? '<span class="as-costed">Costeado</span>' : '<span class="as-uncosted">Sin costear</span>'}
     </div>
   </div>`).join('');
@@ -187,26 +206,30 @@ export async function regPersonalLog() {
   const hora = document.getElementById('m2-plog-hora').value;
   const h = parseInt(document.getElementById('m2-plog-h').value) || 0;
   const m = parseInt(document.getElementById('m2-plog-m').value) || 0;
-  if (!actId || !hora || (h === 0 && m === 0)) { toast('Selecciona actividad, hora y al menos una persona.'); return; }
+  const esm = parseInt(document.getElementById('m2-plog-esm').value) || 0;
+  const svc = parseInt(document.getElementById('m2-plog-svc').value) || 0;
+  if (!actId || !hora || (h === 0 && m === 0 && esm === 0 && svc === 0)) { toast('Selecciona actividad, hora y al menos una persona.'); return; }
 
   const btn = document.getElementById('m2-plog-btn');
   btn.disabled = true;
   const { data, error } = await supabase.from('actividad_personal_log')
-    .insert({ actividad_codigo: actId, hora, personal_hombres: h, personal_mujeres: m }).select().single();
+    .insert({ actividad_codigo: actId, hora, personal_hombres: h, personal_mujeres: m, personal_esmeralda: esm, personal_service: svc }).select().single();
   if (error) { btn.disabled = false; toast('Error: ' + error.message, true); return; }
 
   const { error: updErr } = await supabase.from('actividades')
-    .update({ personal_hombres: h, personal_mujeres: m, total_personal: h + m }).eq('codigo', actId);
+    .update({ personal_hombres: h, personal_mujeres: m, total_personal: h + m, personal_esmeralda: esm, personal_service: svc }).eq('codigo', actId);
   btn.disabled = false;
   if (updErr) { toast('Error al actualizar actividad: ' + updErr.message, true); return; }
 
   (personalLogDB[actId] ||= []).push(mapPersonalLog(data));
   const act = actividadesDB.find(a => a.id === actId);
-  if (act) { act.h = h; act.m = m; act.totalPersonal = h + m; }
+  if (act) { act.h = h; act.m = m; act.totalPersonal = h + m; act.esm = esm; act.svc = svc; }
 
   document.getElementById('m2-plog-hora').value = '';
   document.getElementById('m2-plog-h').value = '';
   document.getElementById('m2-plog-m').value = '';
+  document.getElementById('m2-plog-esm').value = '';
+  document.getElementById('m2-plog-svc').value = '';
   rendPersonalLog(); rendM2(); toast('Registro de personal agregado');
   if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(actId); }
 }
@@ -220,6 +243,6 @@ export function rendPersonalLog() {
   if (!actId) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Selecciona una actividad.</div>'; return; }
   if (!logs.length) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Sin registros de personal.</div>'; return; }
   el.innerHTML = [...logs].reverse().map((r, i) => `<div class="lata-row">
-    <div><div style="font-size:11px;color:var(--muted)">Registro #${logs.length - i}</div><div class="lata-qty">${r.h + r.m} <span>personas</span></div><div style="font-size:11px;color:var(--muted)">H: ${r.h} · M: ${r.m}</div></div>
+    <div><div style="font-size:11px;color:var(--muted)">Registro #${logs.length - i}</div><div class="lata-qty">${r.h + r.m} <span>personas</span></div><div style="font-size:11px;color:var(--muted)">H: ${r.h} · M: ${r.m} · Esmeralda: ${r.esm} · Service: ${r.svc}</div></div>
     <div class="lata-hora">${r.hora}</div></div>`).join('');
 }
