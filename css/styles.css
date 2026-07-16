@@ -57,6 +57,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .divider{height:1px;background:var(--g100);margin:1.5rem 0}
+.subgroup-title{font-size:11px;font-weight:600;color:var(--b600);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .5rem}
 
 /* ── SELECT + ADD ── */
 .sel-wrap{display:flex;gap:8px;align-items:flex-end}

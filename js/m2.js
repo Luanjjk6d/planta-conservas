@@ -6,6 +6,17 @@ import { renderM3, refreshIfSelected } from './m3.js';
 
 let editingId = null;
 
+function derivePersonal(esmH, esmM, svcH, svcM) {
+  return {
+    esmH, esmM, svcH, svcM,
+    h: esmH + svcH,
+    m: esmM + svcM,
+    esm: esmH + esmM,
+    svc: svcH + svcM,
+    totalPersonal: esmH + esmM + svcH + svcM,
+  };
+}
+
 export function mapActividad(row) {
   return {
     id: row.codigo,
@@ -20,11 +31,7 @@ export function mapActividad(row) {
     ping: parseFloat(row.peso_ingreso),
     psal: parseFloat(row.peso_salida),
     merma: parseFloat(row.merma),
-    h: row.personal_hombres,
-    m: row.personal_mujeres,
-    totalPersonal: row.total_personal,
-    esm: row.personal_esmeralda,
-    svc: row.personal_service,
+    ...derivePersonal(row.personal_esmeralda_h, row.personal_esmeralda_m, row.personal_service_h, row.personal_service_m),
     estado: row.estado,
   };
 }
@@ -33,10 +40,7 @@ export function mapPersonalLog(row) {
   return {
     actId: row.actividad_codigo,
     hora: (row.hora || '').slice(0, 5),
-    h: row.personal_hombres,
-    m: row.personal_mujeres,
-    esm: row.personal_esmeralda,
-    svc: row.personal_service,
+    ...derivePersonal(row.personal_esmeralda_h, row.personal_esmeralda_m, row.personal_service_h, row.personal_service_m),
   };
 }
 
@@ -60,12 +64,11 @@ function calcMerma() {
 }
 
 export function calcTotalPersonal() {
-  const h = parseInt(document.getElementById('m2-h').value) || 0;
-  const m = parseInt(document.getElementById('m2-m').value) || 0;
-  document.getElementById('m2-total-p').value = h + m;
-  const esm = parseInt(document.getElementById('m2-esm').value) || 0;
-  const svc = parseInt(document.getElementById('m2-svc').value) || 0;
-  document.getElementById('m2-total-emp').value = esm + svc;
+  const esmH = parseInt(document.getElementById('m2-esm-h').value) || 0;
+  const esmM = parseInt(document.getElementById('m2-esm-m').value) || 0;
+  const svcH = parseInt(document.getElementById('m2-svc-h').value) || 0;
+  const svcM = parseInt(document.getElementById('m2-svc-m').value) || 0;
+  document.getElementById('m2-total-p').value = esmH + esmM + svcH + svcM;
 }
 
 export function initM2Listeners() {
@@ -87,10 +90,10 @@ export function editM2(id) {
   document.getElementById('m2-psal').value = act.psal || '';
   calcMerma();
   document.getElementById('m2-estado').value = act.estado;
-  document.getElementById('m2-h').value = act.h || '';
-  document.getElementById('m2-m').value = act.m || '';
-  document.getElementById('m2-esm').value = act.esm || '';
-  document.getElementById('m2-svc').value = act.svc || '';
+  document.getElementById('m2-esm-h').value = act.esmH || '';
+  document.getElementById('m2-esm-m').value = act.esmM || '';
+  document.getElementById('m2-svc-h').value = act.svcH || '';
+  document.getElementById('m2-svc-m').value = act.svcM || '';
   calcTotalPersonal();
   document.getElementById('m2-save-btn').textContent = 'Actualizar actividad →';
   document.getElementById('m2-edit-banner').style.display = 'flex';
@@ -107,10 +110,10 @@ export async function guarM2() {
   const durMin = fin ? Math.max(0, tMin(fin) - tMin(ini)) : 0;
   const ping = parseFloat(document.getElementById('m2-ping').value) || 0;
   const psal = parseFloat(document.getElementById('m2-psal').value) || 0;
-  const h = parseInt(document.getElementById('m2-h').value) || 0;
-  const m = parseInt(document.getElementById('m2-m').value) || 0;
-  const esm = parseInt(document.getElementById('m2-esm').value) || 0;
-  const svc = parseInt(document.getElementById('m2-svc').value) || 0;
+  const esmH = parseInt(document.getElementById('m2-esm-h').value) || 0;
+  const esmM = parseInt(document.getElementById('m2-esm-m').value) || 0;
+  const svcH = parseInt(document.getElementById('m2-svc-h').value) || 0;
+  const svcM = parseInt(document.getElementById('m2-svc-m').value) || 0;
 
   const btn = document.getElementById('m2-save-btn');
   btn.disabled = true;
@@ -124,11 +127,10 @@ export async function guarM2() {
     peso_ingreso: ping,
     peso_salida: psal,
     merma: Math.max(0, ping - psal),
-    personal_hombres: h,
-    personal_mujeres: m,
-    total_personal: h + m,
-    personal_esmeralda: esm,
-    personal_service: svc,
+    personal_esmeralda_h: esmH,
+    personal_esmeralda_m: esmM,
+    personal_service_h: svcH,
+    personal_service_m: svcM,
     estado,
   };
 
@@ -154,7 +156,7 @@ export async function guarM2() {
 }
 
 export function limpM2() {
-  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-h', 'm2-m', 'm2-dur', 'm2-total-p', 'm2-esm', 'm2-svc', 'm2-total-emp'].forEach(id => document.getElementById(id).value = '');
+  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-esm-h', 'm2-esm-m', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
@@ -179,9 +181,10 @@ export function rendM2() {
       </div>
     </div>
     ${r.ping || r.psal ? `<div class="pill"><strong>Ingreso:</strong> ${r.ping} kg → <strong>Salida:</strong> ${r.psal} kg${r.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + r.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}
-    <div style="display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap">
-      <span>H: ${r.h} · M: ${r.m} · Total: <strong style="color:var(--text)">${r.totalPersonal}</strong></span>
-      <span>Esmeralda: ${r.esm} · Service: ${r.svc}</span>
+    <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+      Esmeralda — H: ${r.esmH} · M: ${r.esmM} &nbsp;|&nbsp; Service — H: ${r.svcH} · M: ${r.svcM} &nbsp;|&nbsp; Total: <strong style="color:var(--text)">${r.totalPersonal}</strong>
+    </div>
+    <div style="margin-top:6px">
       ${costosDB[r.id] ? '<span class="as-costed">Costeado</span>' : '<span class="as-uncosted">Sin costear</span>'}
     </div>
   </div>`).join('');
@@ -204,32 +207,32 @@ export function initPersonalLogSelect() {
 export async function regPersonalLog() {
   const actId = document.getElementById('m2-plog-act').value;
   const hora = document.getElementById('m2-plog-hora').value;
-  const h = parseInt(document.getElementById('m2-plog-h').value) || 0;
-  const m = parseInt(document.getElementById('m2-plog-m').value) || 0;
-  const esm = parseInt(document.getElementById('m2-plog-esm').value) || 0;
-  const svc = parseInt(document.getElementById('m2-plog-svc').value) || 0;
-  if (!actId || !hora || (h === 0 && m === 0 && esm === 0 && svc === 0)) { toast('Selecciona actividad, hora y al menos una persona.'); return; }
+  const esmH = parseInt(document.getElementById('m2-plog-esm-h').value) || 0;
+  const esmM = parseInt(document.getElementById('m2-plog-esm-m').value) || 0;
+  const svcH = parseInt(document.getElementById('m2-plog-svc-h').value) || 0;
+  const svcM = parseInt(document.getElementById('m2-plog-svc-m').value) || 0;
+  if (!actId || !hora || (esmH === 0 && esmM === 0 && svcH === 0 && svcM === 0)) { toast('Selecciona actividad, hora y al menos una persona.'); return; }
 
   const btn = document.getElementById('m2-plog-btn');
   btn.disabled = true;
   const { data, error } = await supabase.from('actividad_personal_log')
-    .insert({ actividad_codigo: actId, hora, personal_hombres: h, personal_mujeres: m, personal_esmeralda: esm, personal_service: svc }).select().single();
+    .insert({ actividad_codigo: actId, hora, personal_esmeralda_h: esmH, personal_esmeralda_m: esmM, personal_service_h: svcH, personal_service_m: svcM }).select().single();
   if (error) { btn.disabled = false; toast('Error: ' + error.message, true); return; }
 
   const { error: updErr } = await supabase.from('actividades')
-    .update({ personal_hombres: h, personal_mujeres: m, total_personal: h + m, personal_esmeralda: esm, personal_service: svc }).eq('codigo', actId);
+    .update({ personal_esmeralda_h: esmH, personal_esmeralda_m: esmM, personal_service_h: svcH, personal_service_m: svcM }).eq('codigo', actId);
   btn.disabled = false;
   if (updErr) { toast('Error al actualizar actividad: ' + updErr.message, true); return; }
 
   (personalLogDB[actId] ||= []).push(mapPersonalLog(data));
   const act = actividadesDB.find(a => a.id === actId);
-  if (act) { act.h = h; act.m = m; act.totalPersonal = h + m; act.esm = esm; act.svc = svc; }
+  if (act) Object.assign(act, derivePersonal(esmH, esmM, svcH, svcM));
 
   document.getElementById('m2-plog-hora').value = '';
-  document.getElementById('m2-plog-h').value = '';
-  document.getElementById('m2-plog-m').value = '';
-  document.getElementById('m2-plog-esm').value = '';
-  document.getElementById('m2-plog-svc').value = '';
+  document.getElementById('m2-plog-esm-h').value = '';
+  document.getElementById('m2-plog-esm-m').value = '';
+  document.getElementById('m2-plog-svc-h').value = '';
+  document.getElementById('m2-plog-svc-m').value = '';
   rendPersonalLog(); rendM2(); toast('Registro de personal agregado');
   if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(actId); }
 }
@@ -238,11 +241,11 @@ export function rendPersonalLog() {
   const actId = document.getElementById('m2-plog-act').value;
   const logs = personalLogDB[actId] || [];
   document.getElementById('plog-count').textContent = logs.length;
-  document.getElementById('plog-current').textContent = logs.length ? (logs[logs.length - 1].h + logs[logs.length - 1].m) : '0';
+  document.getElementById('plog-current').textContent = logs.length ? logs[logs.length - 1].totalPersonal : '0';
   const el = document.getElementById('list-plog');
   if (!actId) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Selecciona una actividad.</div>'; return; }
   if (!logs.length) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Sin registros de personal.</div>'; return; }
   el.innerHTML = [...logs].reverse().map((r, i) => `<div class="lata-row">
-    <div><div style="font-size:11px;color:var(--muted)">Registro #${logs.length - i}</div><div class="lata-qty">${r.h + r.m} <span>personas</span></div><div style="font-size:11px;color:var(--muted)">H: ${r.h} · M: ${r.m} · Esmeralda: ${r.esm} · Service: ${r.svc}</div></div>
+    <div><div style="font-size:11px;color:var(--muted)">Registro #${logs.length - i}</div><div class="lata-qty">${r.totalPersonal} <span>personas</span></div><div style="font-size:11px;color:var(--muted)">Esmeralda — H:${r.esmH} M:${r.esmM} &nbsp;|&nbsp; Service — H:${r.svcH} M:${r.svcM}</div></div>
     <div class="lata-hora">${r.hora}</div></div>`).join('');
 }
