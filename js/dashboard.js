@@ -46,12 +46,8 @@ export async function renderDash(dateStr = currentDashDate) {
   const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
   const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);
   const totCosto = Object.values(dashCostos).reduce((s, c) => s + (c.total || 0), 0);
-  const ti = dashAct.reduce((s, r) => s + r.ping, 0), to = dashAct.reduce((s, r) => s + r.psal, 0);
-  const rend = ti > 0 ? (to / ti * 100) : 0;
-
   document.getElementById('d-mp').textContent = totMP.toFixed(1);
   document.getElementById('d-merma').textContent = totMerma.toFixed(1);
-  document.getElementById('d-rend').textContent = rend.toFixed(1) + '%';
   document.getElementById('d-costo').textContent = fmt(totCosto);
 
   // Último lote del día
@@ -128,16 +124,21 @@ export async function renderDash(dateStr = currentDashDate) {
     mb2.innerHTML = cm.map(r => `<div class="merma-item"><div class="merma-hd"><span style="font-size:12px;font-weight:500;color:var(--text)">${esc(r.proc)}</span><span style="font-size:12px;font-weight:600;color:var(--orange)">${r.merma.toFixed(1)} kg</span></div><div class="merma-bg"><div class="merma-fill" style="width:${Math.round(r.merma / mx * 100)}%"></div></div></div>`).join('');
   }
 
-  // Rendimiento de pesos
+  // Rendimiento por proceso — cada actividad por separado (sumar todo el día
+  // mezclaría pasos sin merma, ej. Descarga 20→20, con pasos que sí pierden
+  // peso, e infla el % global de forma engañosa).
   const pb2 = document.getElementById('d-pesos-body');
-  if (!ti) { pb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
+  const rendActs = dashAct.filter(r => r.ping > 0);
+  if (!rendActs.length) { pb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    const rendPct = ti > 0 ? (to / ti * 100).toFixed(1) : 0;
-    pb2.innerHTML = `<div class="di-row"><span class="di-l">Peso ingreso total</span><span class="di-v">${ti.toFixed(1)} kg</span></div>
-    <div class="di-row"><span class="di-l">Peso salida total</span><span class="di-v">${to.toFixed(1)} kg</span></div>
-    <div class="di-row"><span class="di-l">Merma total</span><span class="di-v" style="color:var(--orange);font-weight:600">${(ti - to).toFixed(1)} kg</span></div>
-    <div class="di-row"><span class="di-l">Rendimiento</span><span class="di-v" style="color:var(--green);font-weight:700;font-size:18px">${rendPct}%</span></div>
-    <div style="margin-top:10px;background:var(--g100);border-radius:999px;height:9px;overflow:hidden"><div style="height:100%;width:${Math.min(100, parseFloat(rendPct))}%;background:linear-gradient(90deg,#4ade80,#16a34a);border-radius:999px"></div></div>`;
+    pb2.innerHTML = rendActs.map(r => {
+      const pct = r.psal / r.ping * 100;
+      return `<div class="merma-item">
+      <div class="merma-hd"><span style="font-size:12px;font-weight:500;color:var(--text)">${esc(r.proc)}${r.batch ? ' · ' + esc(r.batch) : ''}</span><span style="font-size:12px;font-weight:600;color:var(--green)">${pct.toFixed(1)}%</span></div>
+      <div class="merma-bg"><div class="merma-fill" style="width:${Math.min(100, Math.round(pct))}%;background:linear-gradient(90deg,#4ade80,#16a34a)"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${r.ping} kg → ${r.psal} kg</div>
+    </div>`;
+    }).join('');
   }
 
   document.getElementById('d-updated').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;

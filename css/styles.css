@@ -159,6 +159,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 /* ── DASHBOARD ── */
 .dash{padding:2rem;max-width:1200px;margin:0 auto}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:2rem}
+.kpi-grid-3{grid-template-columns:repeat(3,1fr)}
 .kpi{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:1.25rem 1.5rem;box-shadow:var(--sh-sm);position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .kpi.blue::before{background:linear-gradient(90deg,var(--b400),var(--b600))}
