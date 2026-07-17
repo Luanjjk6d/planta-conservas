@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { m1Data } from './state.js';
 import { hn, fF, esc, toast } from './utils.js';
+import { viewDate } from './viewDate.js';
 
 export function mapLote(row) {
   return {
@@ -53,9 +54,10 @@ export function limpM1() {
 
 export function rendM1() {
   const el = document.getElementById('list-m1');
-  if (!m1Data.length) { el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>Sin registros aún.</div>'; return; }
-  el.innerHTML = m1Data.map((r, i) => `<div class="card">
-    <div class="card-head"><div><div class="card-title">${esc(r.sup)}</div><div class="card-meta">${fF(r.fecha)} · ${r.hora}${r.turno ? ' · ' + r.turno.split(' ')[0] : ''}</div></div><span class="card-num">#${m1Data.length - i}</span></div>
+  const dayData = m1Data.filter(r => r.fecha === viewDate.current);
+  if (!dayData.length) { el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>Sin registros este día.</div>'; return; }
+  el.innerHTML = dayData.map((r, i) => `<div class="card">
+    <div class="card-head"><div><div class="card-title">${esc(r.sup)}</div><div class="card-meta">${fF(r.fecha)} · ${r.hora}${r.turno ? ' · ' + r.turno.split(' ')[0] : ''}</div></div><span class="card-num">#${dayData.length - i}</span></div>
     <div class="pill"><strong>NP:</strong> ${esc(r.np)}</div>
     <div class="pill" style="margin-top:4px"><strong>Producto:</strong> ${esc(r.prod)}${r.especie ? ' · <strong>Especie:</strong> ' + esc(r.especie) : ''}</div>
     <div class="cstats" style="grid-template-columns:1fr 1fr 1fr"><div><div class="cs-v">${r.peso} kg</div><div class="cs-l">Mat. prima</div></div><div><div class="cs-v">${esc(r.sup)}</div><div class="cs-l">Supervisor</div></div><div><div class="cs-v">${r.turno ? r.turno.split(' ')[0] : '—'}</div><div class="cs-l">Turno</div></div></div>

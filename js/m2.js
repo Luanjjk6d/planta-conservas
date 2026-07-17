@@ -4,6 +4,7 @@ import { hn, tMin, mHM, esc, toast } from './utils.js';
 import { stL, sugerencias } from './constants.js';
 import { renderM3, refreshIfSelected } from './m3.js';
 import { renderEmpleadoChecklist, getSelectedEmpleadoIds } from './empleados.js';
+import { viewDate } from './viewDate.js';
 
 let editingId = null;
 
@@ -186,10 +187,11 @@ export function limpM2() {
 
 export function rendM2() {
   const el = document.getElementById('list-m2');
-  if (!actividadesDB.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Sin actividades registradas.<br><span style="font-size:12px">Cada registro genera un ID único disponible en el Módulo 3.</span></div>';
+  const dayData = actividadesDB.filter(r => r.fecha === viewDate.current);
+  if (!dayData.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Sin actividades este día.<br><span style="font-size:12px">Cada registro genera un ID único disponible en el Módulo 3.</span></div>';
   } else {
-    el.innerHTML = actividadesDB.map(r => `<div class="card">
+    el.innerHTML = dayData.map(r => `<div class="card">
     <div class="card-head">
       <div><div class="card-title">${esc(r.proc)}</div><div class="card-meta">${r.ini} → ${r.fin} ${r.durMin ? '· ' + mHM(r.durMin) : ''} · Equipo: ${esc(r.equipo)}${r.batch ? ' · Batch: ' + esc(r.batch) : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -216,8 +218,9 @@ export function rendM2() {
 export function initPersonalLogSelect() {
   const sel = document.getElementById('m2-plog-act');
   const prev = sel.value;
+  const dayData = actividadesDB.filter(a => a.fecha === viewDate.current);
   sel.innerHTML = '<option value="">Seleccionar actividad...</option>' +
-    actividadesDB.map(a => `<option value="${a.id}">${a.id} — ${esc(a.proc)}${a.batch ? ' (' + esc(a.batch) + ')' : ''}</option>`).join('');
+    dayData.map(a => `<option value="${a.id}">${a.id} — ${esc(a.proc)}${a.batch ? ' (' + esc(a.batch) + ')' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   rendPersonalLog();
 }

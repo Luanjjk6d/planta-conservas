@@ -11,6 +11,7 @@ import {
 import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } from './m3.js';
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal } from './empleados.js';
+import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -22,7 +23,13 @@ Object.assign(window, {
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
+  viewPrevDay, viewNextDay, viewToday, viewJumpDate,
 });
+
+// El día seleccionado (Módulo 1/2/3) es compartido — cada cambio vuelve a
+// renderizar las listas de los tres módulos (es barato: son solo arrays ya
+// cargados en memoria, sin nuevas consultas a Supabase).
+onViewDateChanged(() => { rendM1(); rendM2(); renderM3(); });
 
 // Header date
 (() => {
@@ -67,6 +74,7 @@ async function initApp() {
   populateLookupSelect('m2-equipo', lookups.equipos);
 
   renderEmpleadoChecklist([]);
+  initViewDateNav();
   rendM1(); rendM2();
 }
 

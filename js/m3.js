@@ -3,6 +3,7 @@ import { actividadesDB, costosDB, actividadEmpleadosDB } from './state.js';
 import { esc, fmt, fmtN, mHM, toast } from './utils.js';
 import { stL } from './constants.js';
 import { rendM2 } from './m2.js';
+import { viewDate } from './viewDate.js';
 
 let selectedActId = null;
 
@@ -35,11 +36,13 @@ export function mapCosto(row) {
 
 export function renderM3() {
   const listEl = document.getElementById('m3-actividades-list');
-  if (!actividadesDB.length) {
-    listEl.innerHTML = '<div class="empty-costo"><div class="empty-ico" style="margin:0 auto 12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>No hay actividades aún.<br>Registra procesos en el <strong>Módulo 2</strong>.</div>';
+  const dayData = actividadesDB.filter(a => a.fecha === viewDate.current);
+  if (!dayData.length) {
+    listEl.innerHTML = '<div class="empty-costo"><div class="empty-ico" style="margin:0 auto 12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>No hay actividades este día.<br>Registra procesos en el <strong>Módulo 2</strong>.</div>';
+    updateCostosSummary(dayData);
     return;
   }
-  listEl.innerHTML = actividadesDB.map(a => {
+  listEl.innerHTML = dayData.map(a => {
     const costed = costosDB[a.id];
     return `<div class="act-selector${selectedActId === a.id ? ' selected' : ''}" onclick="selectActividad('${a.id}')">
       <div class="as-head">
@@ -56,7 +59,7 @@ export function renderM3() {
       </div>
     </div>`;
   }).join('');
-  updateCostosSummary();
+  updateCostosSummary(dayData);
 }
 
 export function selectActividad(id) {
@@ -281,8 +284,8 @@ export function refreshIfSelected(id) {
   if (selectedActId === id) selectActividad(id);
 }
 
-export function updateCostosSummary() {
-  const vals = Object.values(costosDB);
+export function updateCostosSummary(dayData = actividadesDB.filter(a => a.fecha === viewDate.current)) {
+  const vals = dayData.map(a => costosDB[a.id]).filter(Boolean);
   const totEsm = vals.reduce((s, c) => s + (c.cEsm || 0), 0);
   const totSvc = vals.reduce((s, c) => s + (c.cSvc || 0), 0);
   const totMaq = vals.reduce((s, c) => s + (c.cMaq || 0), 0);
