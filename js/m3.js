@@ -48,7 +48,7 @@ export function renderM3() {
       <div class="as-head">
         <div>
           <div class="as-proc">${esc(a.proc)}</div>
-          <div class="as-id">${a.id} · ${a.equipo}${a.batch ? ' · Batch: ' + esc(a.batch) : ''}</div>
+          <div class="as-id">${a.id} · ${a.equipo}${a.np ? ' · NP: ' + esc(a.np) : ''}${a.batch ? ' · Batch: ' + esc(a.batch) : ''}</div>
         </div>
         ${costed ? '<span class="as-costed">Costeado</span>' : '<span class="as-uncosted">Pendiente</span>'}
       </div>
@@ -82,6 +82,7 @@ export function selectActividad(id) {
         <div class="cd-grid3">
           <div><div class="cd-item-l">Proceso</div><div class="cd-item-v">${esc(act.proc)}</div></div>
           <div><div class="cd-item-l">Equipo / Máquina</div><div class="cd-item-v">${esc(act.equipo)}</div></div>
+          <div><div class="cd-item-l">NP</div><div class="cd-item-v">${act.np ? esc(act.np) : '—'}</div></div>
           <div><div class="cd-item-l">Batch</div><div class="cd-item-v">${act.batch ? esc(act.batch) : '—'}</div></div>
           <div><div class="cd-item-l">Estado</div><div class="cd-item-v">${stL[act.estado]}</div></div>
           <div><div class="cd-item-l">Hora inicio</div><div class="cd-item-v mono">${act.ini}</div></div>

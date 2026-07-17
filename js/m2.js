@@ -22,6 +22,7 @@ function derivePersonal(esmH, esmM, svcH, svcM) {
 export function mapActividad(row) {
   return {
     id: row.codigo,
+    np: row.numero_parte || '',
     batch: row.numero_batch || '',
     fecha: row.fecha,
     proc: row.proceso,
@@ -82,6 +83,7 @@ export function editM2(id) {
   const act = actividadesDB.find(a => a.id === id);
   if (!act) return;
   editingId = id;
+  document.getElementById('m2-np').value = act.np || '';
   document.getElementById('m2-batch').value = act.batch || '';
   document.getElementById('m2-proc').value = act.proc;
   document.getElementById('m2-equipo').value = act.equipo;
@@ -102,6 +104,7 @@ export function editM2(id) {
 }
 
 export async function guarM2() {
+  const np = document.getElementById('m2-np').value || null;
   const batch = document.getElementById('m2-batch').value.trim() || null;
   const proc = document.getElementById('m2-proc').value;
   const ini = document.getElementById('m2-ini').value;
@@ -121,6 +124,7 @@ export async function guarM2() {
   const btn = document.getElementById('m2-save-btn');
   btn.disabled = true;
   const record = {
+    numero_parte: np,
     numero_batch: batch,
     proceso: proc,
     equipo: document.getElementById('m2-equipo').value || '—',
@@ -175,6 +179,7 @@ async function syncEmpleadosActividad(actividadCodigo, empleadoIds) {
 
 export function limpM2() {
   ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m2-np').selectedIndex = 0;
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
@@ -193,7 +198,7 @@ export function rendM2() {
   } else {
     el.innerHTML = dayData.map(r => `<div class="card">
     <div class="card-head">
-      <div><div class="card-title">${esc(r.proc)}</div><div class="card-meta">${r.ini} → ${r.fin} ${r.durMin ? '· ' + mHM(r.durMin) : ''} · Equipo: ${esc(r.equipo)}${r.batch ? ' · Batch: ' + esc(r.batch) : ''}</div></div>
+      <div><div class="card-title">${esc(r.proc)}${r.np ? ' · NP: ' + esc(r.np) : ''}</div><div class="card-meta">${r.ini} → ${r.fin} ${r.durMin ? '· ' + mHM(r.durMin) : ''} · Equipo: ${esc(r.equipo)}${r.batch ? ' · Batch: ' + esc(r.batch) : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="card-num">${r.id}</span>
         <span class="sbadge ${r.estado}">${stL[r.estado]}</span>

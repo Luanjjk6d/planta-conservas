@@ -72,6 +72,8 @@ async function initApp() {
   populateLookupSelect('m1-prod', lookups.productos);
   populateLookupSelect('m2-proc', lookups.procesos);
   populateLookupSelect('m2-equipo', lookups.equipos);
+  populateLookupSelect('m1-np', lookups.numerosParte);
+  populateLookupSelect('m2-np', lookups.numerosParte);
 
   renderEmpleadoChecklist([]);
   initViewDateNav();
