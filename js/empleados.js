@@ -29,10 +29,24 @@ export function renderEmpleadoChecklist(selectedIds = []) {
     return;
   }
   el.innerHTML = empleadosEsmeraldaDB.map(emp => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-      <input type="checkbox" class="m2-esm-emp-cb" value="${emp.id}" ${selectedIds.includes(emp.id) ? 'checked' : ''}>
-      ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero} · S/.${emp.costoHora.toFixed(2)}/h)</span>
-    </label>`).join('');
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" class="m2-esm-emp-cb" value="${emp.id}" ${selectedIds.includes(emp.id) ? 'checked' : ''}>
+        ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero} · S/.${emp.costoHora.toFixed(2)}/h)</span>
+      </label>
+      <button class="link-del" onclick="eliminarEmpleado(${emp.id})">Eliminar</button>
+    </div>`).join('');
+}
+
+export async function eliminarEmpleado(id) {
+  const emp = empleadosEsmeraldaDB.find(e => e.id === id);
+  if (!confirm(`¿Eliminar a "${emp?.nombre}" del catálogo?`)) return;
+  const { error } = await supabase.from('empleados_esmeralda').delete().eq('id', id);
+  if (error) { toast('Error al eliminar: ' + error.message, true); return; }
+  const idx = empleadosEsmeraldaDB.findIndex(e => e.id === id);
+  if (idx !== -1) empleadosEsmeraldaDB.splice(idx, 1);
+  renderEmpleadoChecklist(getSelectedEmpleadoIds());
+  toast(`"${emp?.nombre}" eliminado`);
 }
 
 export function getSelectedEmpleadoIds() {

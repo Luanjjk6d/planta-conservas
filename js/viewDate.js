@@ -12,6 +12,8 @@ function notify() {
   document.querySelectorAll('.view-date-label').forEach(el => { el.textContent = fDateLong(viewDate.current); });
   document.querySelectorAll('.view-date-input').forEach(el => { el.value = viewDate.current; });
   document.querySelectorAll('.view-date-next-btn').forEach(el => { el.disabled = viewDate.current >= localDateStr(); });
+  const m1Fecha = document.getElementById('m1-fecha');
+  if (m1Fecha) m1Fecha.value = viewDate.current;
   listeners.forEach(fn => fn(viewDate.current));
 }
 

@@ -8,6 +8,19 @@ import { viewDate } from './viewDate.js';
 
 let editingId = null;
 
+// NP "pegajoso": una vez guardada una actividad con un NP, los siguientes
+// registros nuevos en Módulo 2 lo mantienen preseleccionado hasta que el
+// usuario lo cambie manualmente o el NP se cierre/elimine desde Módulo 1.
+let stickyNp = null;
+
+export function clearStickyNpIfMatches(nombre) {
+  if (stickyNp === nombre) {
+    stickyNp = null;
+    const sel = document.getElementById('m2-np');
+    if (sel) sel.value = '';
+  }
+}
+
 function derivePersonal(esmH, esmM, svcH, svcM) {
   return {
     esmH, esmM, svcH, svcM,
@@ -151,17 +164,19 @@ export async function guarM2() {
     const idx = actividadesDB.findIndex(a => a.id === idBeingEdited);
     if (idx !== -1) actividadesDB[idx] = mapActividad(data);
     actividadEmpleadosDB[idBeingEdited] = empleadosSeleccionados;
+    stickyNp = np;
     rendM2(); limpM2(); toast(`Actividad actualizada — ID: ${data.codigo}`);
     if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(idBeingEdited); }
     return;
   }
 
-  const { data, error } = await supabase.from('actividades').insert(record).select().single();
+  const { data, error } = await supabase.from('actividades').insert({ ...record, fecha: viewDate.current }).select().single();
   if (error) { btn.disabled = false; toast('Error al guardar: ' + error.message, true); return; }
   const empErr = await syncEmpleadosActividad(data.codigo, empleadoIds);
   btn.disabled = false;
   if (empErr) { toast('Actividad registrada, pero hubo un error con el personal Esmeralda: ' + empErr, true); }
 
+  stickyNp = np;
   actividadesDB.unshift(mapActividad(data));
   actividadEmpleadosDB[data.codigo] = empleadosSeleccionados;
   rendM2(); limpM2(); toast(`Actividad registrada — ID: ${data.codigo}`);
@@ -177,9 +192,24 @@ async function syncEmpleadosActividad(actividadCodigo, empleadoIds) {
   return insError ? insError.message : null;
 }
 
+export async function eliminarActividad(id) {
+  if (!confirm(`¿Eliminar la actividad ${id}? Esto también borra sus costos y su historial de personal. Esta acción no se puede deshacer.`)) return;
+  const { error } = await supabase.from('actividades').delete().eq('codigo', id);
+  if (error) { toast('Error al eliminar: ' + error.message, true); return; }
+
+  const idx = actividadesDB.findIndex(a => a.id === id);
+  if (idx !== -1) actividadesDB.splice(idx, 1);
+  delete costosDB[id];
+  delete personalLogDB[id];
+  delete actividadEmpleadosDB[id];
+  if (editingId === id) limpM2(); else rendM2();
+  if (document.getElementById('page-m3').classList.contains('active')) renderM3();
+  toast('Actividad eliminada');
+}
+
 export function limpM2() {
   ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('m2-np').selectedIndex = 0;
+  document.getElementById('m2-np').value = stickyNp || '';
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
@@ -202,7 +232,10 @@ export function rendM2() {
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="card-num">${r.id}</span>
         <span class="sbadge ${r.estado}">${stL[r.estado]}</span>
-        <a href="#" onclick="editM2('${r.id}');return false;" style="font-size:11px;color:var(--b600);font-weight:500">Editar</a>
+        <div style="display:flex;gap:8px">
+          <a href="#" onclick="editM2('${r.id}');return false;" style="font-size:11px;color:var(--b600);font-weight:500">Editar</a>
+          <button class="link-del" onclick="eliminarActividad('${r.id}')">Eliminar</button>
+        </div>
       </div>
     </div>
     ${r.ping || r.psal ? `<div class="pill"><strong>Ingreso:</strong> ${r.ping} kg → <strong>Salida:</strong> ${r.psal} kg${r.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + r.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}

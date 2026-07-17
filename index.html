@@ -57,7 +57,7 @@
         </div>
       </div>
       <div class="frow">
-        <div class="field"><label>Fecha de inicio</label><input type="date" id="m1-fecha"></div>
+        <div class="field"><label>Fecha de inicio</label><input type="date" id="m1-fecha" onchange="viewJumpDate(this.value)"></div>
         <div class="field"><label>Hora de inicio</label><input type="time" id="m1-hora"></div>
       </div>
       <div class="field">
@@ -65,6 +65,7 @@
         <div class="sel-wrap">
           <select id="m1-prod"><option value="">Seleccionar...</option></select>
           <button class="btn-add" onclick="openModal('m1-prod','Agregar producto','Ej: CABALLA...')">+</button>
+          <button class="btn-x" title="Eliminar productos" onclick="openManageModal('m1-prod','Productos')">×</button>
         </div>
       </div>
       <div class="field"><label>Especie recepcionada</label><input type="text" id="m1-especie" placeholder="Ej: Thunnus albacares"></div>
@@ -127,6 +128,7 @@
             <option value="">Seleccionar proceso...</option>
           </select>
           <button class="btn-add" onclick="openModal('m2-proc','Agregar proceso','Ej: ESTERILIZACIÓN...')">+</button>
+          <button class="btn-x" title="Eliminar procesos" onclick="openManageModal('m2-proc','Procesos')">×</button>
         </div>
       </div>
 
@@ -137,6 +139,7 @@
             <option value="">Seleccionar equipo...</option>
           </select>
           <button class="btn-add" onclick="openModal('m2-equipo','Agregar equipo','Ej: SELLADORA...')">+</button>
+          <button class="btn-x" title="Eliminar equipos" onclick="openManageModal('m2-equipo','Equipos')">×</button>
         </div>
       </div>
 
@@ -326,6 +329,17 @@
     <div class="modal-actions">
       <button class="btn-s" onclick="closeModal()">Cancelar</button>
       <button class="btn-p" onclick="confirmModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GESTIONAR / ELIMINAR ITEMS DE CATÁLOGO -->
+<div class="modal-ov" id="manage-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Eliminar de <span id="manage-modal-title"></span></div>
+    <div class="manage-list" id="manage-modal-list"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeManageModal()">Cerrar</button>
     </div>
   </div>
 </div>

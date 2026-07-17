@@ -64,6 +64,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .sel-wrap select{flex:1}
 .btn-add{width:36px;height:36px;flex-shrink:0;background:var(--b600);color:#fff;border:none;border-radius:var(--rmd);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(24,95,165,.3);transition:var(--tr)}
 .btn-add:hover{background:var(--b800);transform:translateY(-1px)}
+.btn-x{width:36px;height:36px;flex-shrink:0;background:var(--white);color:var(--muted);border:1.5px solid var(--g200);border-radius:var(--rmd);font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr)}
+.btn-x:hover{background:#FEF2F2;color:#DC2626;border-color:#FCA5A5}
+.link-del{font-size:11px;color:var(--muted);font-weight:500;cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
+.link-del:hover{color:#DC2626}
+.manage-list{max-height:320px;overflow-y:auto;margin:.75rem 0}
 
 /* ── BUTTONS ── */
 .btn-p{background:linear-gradient(135deg,var(--b600),var(--b800));color:#fff;border:none;padding:10px 22px;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(24,95,165,.35);transition:var(--tr)}

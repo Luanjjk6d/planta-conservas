@@ -3,24 +3,26 @@ import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, n
 import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
-import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte } from './m1.js';
+import { openManageModal, closeManageModal, deleteManageItem } from './catalogManage.js';
+import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte, eliminarNumeroParte, eliminarLote } from './m1.js';
 import {
-  guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2,
+  guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
 import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } from './m3.js';
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
-import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal } from './empleados.js';
+import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
 Object.assign(window, {
   showPage, openModal, closeModal, confirmModal,
-  guarM1, limpM1, cerrarNumeroParte,
-  guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2,
+  openManageModal, closeManageModal, deleteManageItem,
+  guarM1, limpM1, cerrarNumeroParte, eliminarNumeroParte, eliminarLote,
+  guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog,
-  openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal,
+  openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,

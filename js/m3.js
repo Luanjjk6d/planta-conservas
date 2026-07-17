@@ -121,32 +121,20 @@ export function selectActividad(id) {
             <span style="font-size:10px;color:var(--muted);margin-top:2px">Equipo: ${esc(act.equipo)} × ${act.durHoras.toFixed(2)} h</span>
           </div>
           <div class="cd-input-row">
-            <label>Energía eléctrica</label>
-            <div class="frow" style="gap:8px">
-              <input type="number" id="ci-energia-kwh" value="${prev.consEnergia || ''}" placeholder="kWh consumidos" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-              <input type="number" id="ci-energia-costo" value="${prev.costoEnergia || ''}" placeholder="S/. por kWh" min="0" step="0.0001" oninput="calcCostoDetalle('${id}')">
-            </div>
+            <label>S/. Energía eléctrica / hora</label>
+            <input type="number" id="ci-energia-costo" value="${prev.costoEnergia || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
           </div>
           <div class="cd-input-row">
-            <label>Vapor</label>
-            <div class="frow" style="gap:8px">
-              <input type="number" id="ci-vapor-m3" value="${prev.consVapor || ''}" placeholder="m³ consumidos" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-              <input type="number" id="ci-vapor-costo" value="${prev.costoVapor || ''}" placeholder="S/. por m³" min="0" step="0.0001" oninput="calcCostoDetalle('${id}')">
-            </div>
+            <label>S/. Vapor / hora</label>
+            <input type="number" id="ci-vapor-costo" value="${prev.costoVapor || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
           </div>
           <div class="cd-input-row">
-            <label>Agua Osmotizada</label>
-            <div class="frow" style="gap:8px">
-              <input type="number" id="ci-agua-osmo-m3" value="${prev.consAguaOsmo || ''}" placeholder="m³ consumidos" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-              <input type="number" id="ci-agua-osmo-costo" value="${prev.costoAguaOsmo || ''}" placeholder="S/. por m³" min="0" step="0.0001" oninput="calcCostoDetalle('${id}')">
-            </div>
+            <label>S/. Agua Osmotizada / hora</label>
+            <input type="number" id="ci-agua-osmo-costo" value="${prev.costoAguaOsmo || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
           </div>
           <div class="cd-input-row">
-            <label>Agua Salobre</label>
-            <div class="frow" style="gap:8px">
-              <input type="number" id="ci-agua-salobre-m3" value="${prev.consAguaSalobre || ''}" placeholder="m³ consumidos" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-              <input type="number" id="ci-agua-salobre-costo" value="${prev.costoAguaSalobre || ''}" placeholder="S/. por m³" min="0" step="0.0001" oninput="calcCostoDetalle('${id}')">
-            </div>
+            <label>S/. Agua Salobre / hora</label>
+            <input type="number" id="ci-agua-salobre-costo" value="${prev.costoAguaSalobre || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
           </div>
           <div class="cd-input-row">
             <label>S/. Otros costos (monto fijo)</label>
@@ -197,10 +185,10 @@ function _renderBreakdownRows(c, act) {
     { l: 'Personal Esmeralda', f: `Suma de tarifas: S/.${(c.costoEsm || 0).toFixed(2)}/h × ${act.durHoras.toFixed(2)}h`, v: c.cEsm },
     { l: 'Personal Service', f: `${act.svc}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoSvc || 0).toFixed(2)}/h`, v: c.cSvc },
     { l: 'Máquina / Equipo', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoMaq || 0).toFixed(2)}/h`, v: c.cMaq },
-    { l: 'Energía eléctrica', f: `${(c.consEnergia || 0)} kWh × S/.${(c.costoEnergia || 0).toFixed(4)}/kWh`, v: c.cEnergia },
-    { l: 'Vapor', f: `${(c.consVapor || 0)} m³ × S/.${(c.costoVapor || 0).toFixed(4)}/m³`, v: c.cVapor },
-    { l: 'Agua Osmotizada', f: `${(c.consAguaOsmo || 0)} m³ × S/.${(c.costoAguaOsmo || 0).toFixed(4)}/m³`, v: c.cAguaOsmo },
-    { l: 'Agua Salobre', f: `${(c.consAguaSalobre || 0)} m³ × S/.${(c.costoAguaSalobre || 0).toFixed(4)}/m³`, v: c.cAguaSalobre },
+    { l: 'Energía eléctrica', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoEnergia || 0).toFixed(2)}/h`, v: c.cEnergia },
+    { l: 'Vapor', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoVapor || 0).toFixed(2)}/h`, v: c.cVapor },
+    { l: 'Agua Osmotizada', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAguaOsmo || 0).toFixed(2)}/h`, v: c.cAguaOsmo },
+    { l: 'Agua Salobre', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAguaSalobre || 0).toFixed(2)}/h`, v: c.cAguaSalobre },
     { l: 'Otros costos', f: 'Monto fijo', v: c.costoOtros || 0 },
   ];
   return rows.map(r => `
@@ -218,33 +206,29 @@ export function calcCostoDetalle(id) {
   const costoSvc = parseFloat(document.getElementById('ci-svc').value) || 0;
   const costoMaq = parseFloat(document.getElementById('ci-maq').value) || 0;
   const costoOtros = parseFloat(document.getElementById('ci-otros').value) || 0;
-  const consEnergia = parseFloat(document.getElementById('ci-energia-kwh').value) || 0;
   const costoEnergia = parseFloat(document.getElementById('ci-energia-costo').value) || 0;
-  const consVapor = parseFloat(document.getElementById('ci-vapor-m3').value) || 0;
   const costoVapor = parseFloat(document.getElementById('ci-vapor-costo').value) || 0;
-  const consAguaOsmo = parseFloat(document.getElementById('ci-agua-osmo-m3').value) || 0;
   const costoAguaOsmo = parseFloat(document.getElementById('ci-agua-osmo-costo').value) || 0;
-  const consAguaSalobre = parseFloat(document.getElementById('ci-agua-salobre-m3').value) || 0;
   const costoAguaSalobre = parseFloat(document.getElementById('ci-agua-salobre-costo').value) || 0;
 
   const h = act.durHoras;
   const cEsm = h * costoEsm;
   const cSvc = act.svc * h * costoSvc;
   const cMaq = h * costoMaq;
-  const cEnergia = consEnergia * costoEnergia;
-  const cVapor = consVapor * costoVapor;
-  const cAguaOsmo = consAguaOsmo * costoAguaOsmo;
-  const cAguaSalobre = consAguaSalobre * costoAguaSalobre;
+  const cEnergia = h * costoEnergia;
+  const cVapor = h * costoVapor;
+  const cAguaOsmo = h * costoAguaOsmo;
+  const cAguaSalobre = h * costoAguaSalobre;
   const total = cEsm + cSvc + cMaq + cEnergia + cVapor + cAguaOsmo + cAguaSalobre + costoOtros;
   const costoPorKgSal = act.psal > 0 ? total / act.psal : 0;
   const costoPorKgIng = act.ping > 0 ? total / act.ping : 0;
 
   const c = {
     costoEsm, costoSvc, costoMaq, costoOtros, cEsm, cSvc, cMaq,
-    consEnergia, costoEnergia, cEnergia,
-    consVapor, costoVapor, cVapor,
-    consAguaOsmo, costoAguaOsmo, cAguaOsmo,
-    consAguaSalobre, costoAguaSalobre, cAguaSalobre,
+    costoEnergia, cEnergia,
+    costoVapor, cVapor,
+    costoAguaOsmo, cAguaOsmo,
+    costoAguaSalobre, cAguaSalobre,
   };
   document.getElementById('cr-breakdown').innerHTML = _renderBreakdownRows(c, act);
   document.getElementById('cr-total').textContent = fmt(total);
@@ -268,10 +252,10 @@ export async function guardarCosto(id) {
     actividad_codigo: id,
     costo_esm: c.costoEsm, costo_svc: c.costoSvc, costo_maq: c.costoMaq, costo_otros: c.costoOtros,
     c_esm: c.cEsm, c_svc: c.cSvc, c_maq: c.cMaq,
-    consumo_energia_kwh: c.consEnergia, costo_energia_kwh: c.costoEnergia, c_energia: c.cEnergia,
-    consumo_vapor_m3: c.consVapor, costo_vapor_m3: c.costoVapor, c_vapor: c.cVapor,
-    consumo_agua_osmo_m3: c.consAguaOsmo, costo_agua_osmo_m3: c.costoAguaOsmo, c_agua_osmo: c.cAguaOsmo,
-    consumo_agua_salobre_m3: c.consAguaSalobre, costo_agua_salobre_m3: c.costoAguaSalobre, c_agua_salobre: c.cAguaSalobre,
+    consumo_energia_kwh: 0, costo_energia_kwh: c.costoEnergia, c_energia: c.cEnergia,
+    consumo_vapor_m3: 0, costo_vapor_m3: c.costoVapor, c_vapor: c.cVapor,
+    consumo_agua_osmo_m3: 0, costo_agua_osmo_m3: c.costoAguaOsmo, c_agua_osmo: c.cAguaOsmo,
+    consumo_agua_salobre_m3: 0, costo_agua_salobre_m3: c.costoAguaSalobre, c_agua_salobre: c.cAguaSalobre,
     total: c.total, costo_por_kg_sal: c.costoPorKgSal, costo_por_kg_ing: c.costoPorKgIng,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'actividad_codigo' });
