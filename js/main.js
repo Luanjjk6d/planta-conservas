@@ -1,9 +1,9 @@
 import { supabase } from './supabaseClient.js';
-import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB } from './state.js';
+import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, numerosParteDB } from './state.js';
 import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
-import { guarM1, limpM1, rendM1, mapLote } from './m1.js';
+import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte } from './m1.js';
 import {
   guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2,
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
@@ -17,7 +17,7 @@ import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, i
 // porque los módulos ES no las exponen globalmente por defecto.
 Object.assign(window, {
   showPage, openModal, closeModal, confirmModal,
-  guarM1, limpM1,
+  guarM1, limpM1, cerrarNumeroParte,
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2,
   regPersonalLog, rendPersonalLog,
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal,
@@ -46,7 +46,7 @@ initModal();
 initM2Listeners();
 
 async function initApp() {
-  const [lotesRes, actRes, costosRes, plogRes, lookups, empleados] = await Promise.all([
+  const [lotesRes, actRes, costosRes, plogRes, lookups, empleados, , numerosParte] = await Promise.all([
     supabase.from('lotes').select('*').order('created_at', { ascending: false }),
     supabase.from('actividades').select('*').order('created_at', { ascending: false }),
     supabase.from('costos').select('*'),
@@ -54,6 +54,7 @@ async function initApp() {
     fetchLookups(),
     fetchEmpleados(),
     fetchActividadEmpleados(),
+    fetchNumerosParte(),
   ]);
 
   const firstError = [lotesRes, actRes, costosRes, plogRes].find(r => r.error);
@@ -68,6 +69,7 @@ async function initApp() {
   Object.assign(costosDB, Object.fromEntries(costosRes.data.map(c => [c.actividad_codigo, mapCosto(c)])));
   plogRes.data.map(mapPersonalLog).forEach(p => { (personalLogDB[p.actId] ||= []).push(p); });
   empleadosEsmeraldaDB.push(...empleados);
+  numerosParteDB.push(...numerosParte);
 
   populateLookupSelect('m1-prod', lookups.productos);
   populateLookupSelect('m2-proc', lookups.procesos);
@@ -76,6 +78,7 @@ async function initApp() {
   populateLookupSelect('m2-np', lookups.numerosParte);
 
   renderEmpleadoChecklist([]);
+  rendNumerosParte();
   initViewDateNav();
   rendM1(); rendM2();
 }

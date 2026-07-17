@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
-import { m1Data } from './state.js';
-import { hn, fF, esc, toast } from './utils.js';
+import { m1Data, numerosParteDB } from './state.js';
+import { hn, fF, esc, toast, localDateStr } from './utils.js';
 import { viewDate } from './viewDate.js';
 
 export function mapLote(row) {
@@ -62,4 +62,50 @@ export function rendM1() {
     <div class="pill" style="margin-top:4px"><strong>Producto:</strong> ${esc(r.prod)}${r.especie ? ' · <strong>Especie:</strong> ' + esc(r.especie) : ''}</div>
     <div class="cstats" style="grid-template-columns:1fr 1fr 1fr"><div><div class="cs-v">${r.peso} kg</div><div class="cs-l">Mat. prima</div></div><div><div class="cs-v">${esc(r.sup)}</div><div class="cs-l">Supervisor</div></div><div><div class="cs-v">${r.turno ? r.turno.split(' ')[0] : '—'}</div><div class="cs-l">Turno</div></div></div>
   </div>`).join('');
+}
+
+// ═══════════════════════════════
+// NÚMEROS DE PARTE (NP)
+// ═══════════════════════════════
+export function mapNumeroParte(row) {
+  return { id: row.id, nombre: row.nombre, estado: row.estado, fechaApertura: row.fecha_apertura, fechaCierre: row.fecha_cierre };
+}
+
+export async function fetchNumerosParte() {
+  const { data, error } = await supabase.from('numeros_parte').select('*').order('nombre');
+  if (error) { toast('Error al cargar números de parte: ' + error.message, true); return []; }
+  return data.map(mapNumeroParte);
+}
+
+export function rendNumerosParte() {
+  const el = document.getElementById('list-np');
+  if (!numerosParteDB.length) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Sin números de parte.</div>'; return; }
+  const abiertos = numerosParteDB.filter(n => n.estado === 'abierto');
+  const cerrados = numerosParteDB.filter(n => n.estado === 'cerrado');
+  el.innerHTML = [...abiertos, ...cerrados].map(n => `
+    <div class="lata-row">
+      <div>
+        <div class="lata-qty" style="font-size:14px">${esc(n.nombre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${n.estado === 'abierto' ? 'Abierto desde ' + fF(n.fechaApertura) : 'Cerrado ' + fF(n.fechaCierre)}</div>
+      </div>
+      ${n.estado === 'abierto'
+        ? `<button class="btn-s" style="padding:6px 12px;font-size:12px" onclick="cerrarNumeroParte(${n.id})">Cerrar</button>`
+        : '<span class="sbadge fin">Cerrado</span>'}
+    </div>`).join('');
+}
+
+export async function cerrarNumeroParte(id) {
+  const fechaCierre = localDateStr();
+  const { error } = await supabase.from('numeros_parte').update({ estado: 'cerrado', fecha_cierre: fechaCierre }).eq('id', id);
+  if (error) { toast('Error al cerrar: ' + error.message, true); return; }
+
+  const np = numerosParteDB.find(n => n.id === id);
+  if (np) { np.estado = 'cerrado'; np.fechaCierre = fechaCierre; }
+  ['m1-np', 'm2-np'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const opt = Array.from(sel.options).find(o => o.value === np?.nombre);
+    if (opt) opt.remove();
+  });
+  rendNumerosParte();
+  toast(`"${np?.nombre}" cerrado`);
 }
