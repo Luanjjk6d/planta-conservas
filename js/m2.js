@@ -1,8 +1,9 @@
 import { supabase } from './supabaseClient.js';
-import { actividadesDB, costosDB, personalLogDB } from './state.js';
+import { actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, actividadEmpleadosDB } from './state.js';
 import { hn, tMin, mHM, esc, toast } from './utils.js';
 import { stL, sugerencias } from './constants.js';
 import { renderM3, refreshIfSelected } from './m3.js';
+import { renderEmpleadoChecklist, getSelectedEmpleadoIds } from './empleados.js';
 
 let editingId = null;
 
@@ -64,16 +65,16 @@ function calcMerma() {
 }
 
 export function calcTotalPersonal() {
-  const esmH = parseInt(document.getElementById('m2-esm-h').value) || 0;
-  const esmM = parseInt(document.getElementById('m2-esm-m').value) || 0;
+  const esmCount = getSelectedEmpleadoIds().length;
   const svcH = parseInt(document.getElementById('m2-svc-h').value) || 0;
   const svcM = parseInt(document.getElementById('m2-svc-m').value) || 0;
-  document.getElementById('m2-total-p').value = esmH + esmM + svcH + svcM;
+  document.getElementById('m2-total-p').value = esmCount + svcH + svcM;
 }
 
 export function initM2Listeners() {
   ['m2-ini', 'm2-fin'].forEach(id => document.getElementById(id).addEventListener('change', calcDuracion));
   ['m2-ping', 'm2-psal'].forEach(id => document.getElementById(id).addEventListener('input', calcMerma));
+  document.getElementById('m2-esm-employees').addEventListener('change', calcTotalPersonal);
 }
 
 export function editM2(id) {
@@ -90,8 +91,7 @@ export function editM2(id) {
   document.getElementById('m2-psal').value = act.psal || '';
   calcMerma();
   document.getElementById('m2-estado').value = act.estado;
-  document.getElementById('m2-esm-h').value = act.esmH || '';
-  document.getElementById('m2-esm-m').value = act.esmM || '';
+  renderEmpleadoChecklist((actividadEmpleadosDB[id] || []).map(e => e.id));
   document.getElementById('m2-svc-h').value = act.svcH || '';
   document.getElementById('m2-svc-m').value = act.svcM || '';
   calcTotalPersonal();
@@ -110,10 +110,12 @@ export async function guarM2() {
   const durMin = fin ? Math.max(0, tMin(fin) - tMin(ini)) : 0;
   const ping = parseFloat(document.getElementById('m2-ping').value) || 0;
   const psal = parseFloat(document.getElementById('m2-psal').value) || 0;
-  const esmH = parseInt(document.getElementById('m2-esm-h').value) || 0;
-  const esmM = parseInt(document.getElementById('m2-esm-m').value) || 0;
   const svcH = parseInt(document.getElementById('m2-svc-h').value) || 0;
   const svcM = parseInt(document.getElementById('m2-svc-m').value) || 0;
+  const empleadoIds = getSelectedEmpleadoIds();
+  const empleadosSeleccionados = empleadosEsmeraldaDB.filter(e => empleadoIds.includes(e.id));
+  const esmH = empleadosSeleccionados.filter(e => e.genero === 'H').length;
+  const esmM = empleadosSeleccionados.filter(e => e.genero === 'M').length;
 
   const btn = document.getElementById('m2-save-btn');
   btn.disabled = true;
@@ -137,30 +139,46 @@ export async function guarM2() {
   if (editingId) {
     const idBeingEdited = editingId;
     const { data, error } = await supabase.from('actividades').update(record).eq('codigo', idBeingEdited).select().single();
+    if (error) { btn.disabled = false; toast('Error al actualizar: ' + error.message, true); return; }
+    const empErr = await syncEmpleadosActividad(idBeingEdited, empleadoIds);
     btn.disabled = false;
-    if (error) { toast('Error al actualizar: ' + error.message, true); return; }
+    if (empErr) { toast('Actividad actualizada, pero hubo un error con el personal Esmeralda: ' + empErr, true); }
     const idx = actividadesDB.findIndex(a => a.id === idBeingEdited);
     if (idx !== -1) actividadesDB[idx] = mapActividad(data);
+    actividadEmpleadosDB[idBeingEdited] = empleadosSeleccionados;
     rendM2(); limpM2(); toast(`Actividad actualizada — ID: ${data.codigo}`);
     if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(idBeingEdited); }
     return;
   }
 
   const { data, error } = await supabase.from('actividades').insert(record).select().single();
+  if (error) { btn.disabled = false; toast('Error al guardar: ' + error.message, true); return; }
+  const empErr = await syncEmpleadosActividad(data.codigo, empleadoIds);
   btn.disabled = false;
-  if (error) { toast('Error al guardar: ' + error.message, true); return; }
+  if (empErr) { toast('Actividad registrada, pero hubo un error con el personal Esmeralda: ' + empErr, true); }
 
   actividadesDB.unshift(mapActividad(data));
+  actividadEmpleadosDB[data.codigo] = empleadosSeleccionados;
   rendM2(); limpM2(); toast(`Actividad registrada — ID: ${data.codigo}`);
   if (document.getElementById('page-m3').classList.contains('active')) renderM3();
 }
 
+async function syncEmpleadosActividad(actividadCodigo, empleadoIds) {
+  const { error: delError } = await supabase.from('actividad_esmeralda_empleados').delete().eq('actividad_codigo', actividadCodigo);
+  if (delError) return delError.message;
+  if (!empleadoIds.length) return null;
+  const { error: insError } = await supabase.from('actividad_esmeralda_empleados')
+    .insert(empleadoIds.map(empleado_id => ({ actividad_codigo: actividadCodigo, empleado_id })));
+  return insError ? insError.message : null;
+}
+
 export function limpM2() {
-  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-esm-h', 'm2-esm-m', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
+  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
   document.getElementById('m2-ini').value = hn();
+  renderEmpleadoChecklist([]);
   editingId = null;
   document.getElementById('m2-save-btn').textContent = 'Registrar actividad →';
   document.getElementById('m2-edit-banner').style.display = 'none';
@@ -182,7 +200,7 @@ export function rendM2() {
     </div>
     ${r.ping || r.psal ? `<div class="pill"><strong>Ingreso:</strong> ${r.ping} kg → <strong>Salida:</strong> ${r.psal} kg${r.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + r.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}
     <div style="margin-top:8px;font-size:12px;color:var(--muted)">
-      Esmeralda — H: ${r.esmH} · M: ${r.esmM} &nbsp;|&nbsp; Service — H: ${r.svcH} · M: ${r.svcM} &nbsp;|&nbsp; Total: <strong style="color:var(--text)">${r.totalPersonal}</strong>
+      Esmeralda${(actividadEmpleadosDB[r.id] || []).length ? ': ' + (actividadEmpleadosDB[r.id] || []).map(e => esc(e.nombre)).join(', ') : ' — sin seleccionar'} &nbsp;|&nbsp; Service — H: ${r.svcH} · M: ${r.svcM} &nbsp;|&nbsp; Total: <strong style="color:var(--text)">${r.totalPersonal}</strong>
     </div>
     <div style="margin-top:6px">
       ${costosDB[r.id] ? '<span class="as-costed">Costeado</span>' : '<span class="as-uncosted">Sin costear</span>'}

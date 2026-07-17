@@ -146,9 +146,9 @@
       </div>
 
       <div class="subgroup-title">Personal Esmeralda</div>
-      <div class="frow">
-        <div class="field"><label>Hombre</label><input type="number" id="m2-esm-h" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
-        <div class="field"><label>Mujer</label><input type="number" id="m2-esm-m" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
+      <div class="sel-wrap" style="align-items:flex-start">
+        <div id="m2-esm-employees" style="flex:1;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white)"></div>
+        <button class="btn-add" onclick="openEmpleadoModal()">+</button>
       </div>
 
       <div class="field"><label>Total personal (calculado)</label><input type="number" id="m2-total-p" readonly placeholder="0"></div>
@@ -289,6 +289,22 @@
     <div class="modal-actions">
       <button class="btn-s" onclick="closeModal()">Cancelar</button>
       <button class="btn-p" onclick="confirmModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPLEADO ESMERALDA -->
+<div class="modal-ov" id="empleado-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Agregar empleado Esmeralda</div>
+    <div class="field"><label>Nombre</label><input type="text" id="empleado-nombre" placeholder="Ej: Luan Dañino"></div>
+    <div class="field"><label>Género</label>
+      <select id="empleado-genero"><option value="H">Hombre</option><option value="M">Mujer</option></select>
+    </div>
+    <div class="field"><label>Costo por hora (S/.)</label><input type="number" id="empleado-costo" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeEmpleadoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmEmpleadoModal()">Agregar →</button>
     </div>
   </div>
 </div>

@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { actividadesDB, costosDB } from './state.js';
+import { actividadesDB, costosDB, actividadEmpleadosDB } from './state.js';
 import { esc, fmt, fmtN, mHM, toast } from './utils.js';
 import { stL } from './constants.js';
 import { rendM2 } from './m2.js';
@@ -91,9 +91,10 @@ export function selectActividad(id) {
         <div class="cd-section-title">Ingresar costos en soles (S/. por hora)</div>
         <div class="cd-grid" style="gap:10px">
           <div class="cd-input-row">
-            <label>S/. Personal Esmeralda / hora</label>
-            <input type="number" id="ci-esm" value="${prev.costoEsm || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.esm} personas × ${act.durHoras.toFixed(2)} h</span>
+            <label>Personal Esmeralda (costo predeterminado)</label>
+            <div id="ci-esm-list" style="display:flex;flex-direction:column;gap:4px">
+              ${_renderEsmeraldaList(id)}
+            </div>
           </div>
           <div class="cd-input-row">
             <label>S/. Personal Service / hora</label>
@@ -141,12 +142,22 @@ export function selectActividad(id) {
         <button class="btn-p" id="m3-save-btn" onclick="guardarCosto('${id}')">Guardar costos →</button>
       </div>
     </div>`;
-  if (prev.costoEsm || prev.costoSvc || prev.costoMaq || prev.costoAVE) calcCostoDetalle(id);
+  if (prev.costoEsm || prev.costoSvc || prev.costoMaq || prev.costoAVE || (actividadEmpleadosDB[id] || []).length) calcCostoDetalle(id);
+}
+
+function _renderEsmeraldaList(id) {
+  const empleados = actividadEmpleadosDB[id] || [];
+  if (!empleados.length) return '<div style="font-size:12px;color:var(--muted)">Sin empleados seleccionados en Módulo 2.</div>';
+  return empleados.map(e => `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text)">
+      <span>${esc(e.nombre)} <span style="color:var(--muted)">(${e.genero})</span></span>
+      <span style="font-family:'DM Mono',monospace;color:var(--muted)">S/.${e.costoHora.toFixed(2)}/h</span>
+    </div>`).join('');
 }
 
 function _renderBreakdownRows(c, act) {
   const rows = [
-    { l: 'Personal Esmeralda', f: `${act.esm}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoEsm || 0).toFixed(2)}/h`, v: c.cEsm },
+    { l: 'Personal Esmeralda', f: `Suma de tarifas: S/.${(c.costoEsm || 0).toFixed(2)}/h × ${act.durHoras.toFixed(2)}h`, v: c.cEsm },
     { l: 'Personal Service', f: `${act.svc}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoSvc || 0).toFixed(2)}/h`, v: c.cSvc },
     { l: 'Máquina / Equipo', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoMaq || 0).toFixed(2)}/h`, v: c.cMaq },
     { l: 'Agua, vapor y elec.', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAVE || 0).toFixed(2)}/h`, v: c.cAVE },
@@ -162,14 +173,15 @@ function _renderBreakdownRows(c, act) {
 export function calcCostoDetalle(id) {
   const act = actividadesDB.find(a => a.id === id);
   if (!act) return;
-  const costoEsm = parseFloat(document.getElementById('ci-esm').value) || 0;
+  const empleados = actividadEmpleadosDB[id] || [];
+  const costoEsm = empleados.reduce((s, e) => s + e.costoHora, 0);
   const costoSvc = parseFloat(document.getElementById('ci-svc').value) || 0;
   const costoMaq = parseFloat(document.getElementById('ci-maq').value) || 0;
   const costoAVE = parseFloat(document.getElementById('ci-ave').value) || 0;
   const costoOtros = parseFloat(document.getElementById('ci-otros').value) || 0;
 
   const h = act.durHoras;
-  const cEsm = act.esm * h * costoEsm;
+  const cEsm = h * costoEsm;
   const cSvc = act.svc * h * costoSvc;
   const cMaq = h * costoMaq;
   const cAVE = h * costoAVE;

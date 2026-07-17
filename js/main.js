@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { m1Data, actividadesDB, costosDB, personalLogDB } from './state.js';
+import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB } from './state.js';
 import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
@@ -10,6 +10,7 @@ import {
 } from './m2.js';
 import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } from './m3.js';
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
+import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal } from './empleados.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -18,6 +19,7 @@ Object.assign(window, {
   guarM1, limpM1,
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2,
   regPersonalLog, rendPersonalLog,
+  openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
 });
@@ -37,12 +39,14 @@ initModal();
 initM2Listeners();
 
 async function initApp() {
-  const [lotesRes, actRes, costosRes, plogRes, lookups] = await Promise.all([
+  const [lotesRes, actRes, costosRes, plogRes, lookups, empleados] = await Promise.all([
     supabase.from('lotes').select('*').order('created_at', { ascending: false }),
     supabase.from('actividades').select('*').order('created_at', { ascending: false }),
     supabase.from('costos').select('*'),
     supabase.from('actividad_personal_log').select('*').order('created_at', { ascending: true }),
     fetchLookups(),
+    fetchEmpleados(),
+    fetchActividadEmpleados(),
   ]);
 
   const firstError = [lotesRes, actRes, costosRes, plogRes].find(r => r.error);
@@ -56,11 +60,13 @@ async function initApp() {
   actividadesDB.push(...actRes.data.map(mapActividad));
   Object.assign(costosDB, Object.fromEntries(costosRes.data.map(c => [c.actividad_codigo, mapCosto(c)])));
   plogRes.data.map(mapPersonalLog).forEach(p => { (personalLogDB[p.actId] ||= []).push(p); });
+  empleadosEsmeraldaDB.push(...empleados);
 
   populateLookupSelect('m1-prod', lookups.productos);
   populateLookupSelect('m2-proc', lookups.procesos);
   populateLookupSelect('m2-equipo', lookups.equipos);
 
+  renderEmpleadoChecklist([]);
   rendM1(); rendM2();
 }
 
