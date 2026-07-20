@@ -86,7 +86,40 @@ export function rendM1() {
 // NÚMEROS DE PARTE (NP)
 // ═══════════════════════════════
 export function mapNumeroParte(row) {
-  return { id: row.id, nombre: row.nombre, estado: row.estado, fechaApertura: row.fecha_apertura, fechaCierre: row.fecha_cierre };
+  return { id: row.id, nombre: row.nombre, estado: row.estado, fechaApertura: row.fecha_apertura, fechaCierre: row.fecha_cierre, cliente: row.cliente || '' };
+}
+
+export function openNpModal() {
+  document.getElementById('np-nombre').value = '';
+  document.getElementById('np-cliente').selectedIndex = 0;
+  document.getElementById('np-modal-ov').classList.add('open');
+  setTimeout(() => document.getElementById('np-nombre').focus(), 100);
+}
+
+export function closeNpModal() {
+  document.getElementById('np-modal-ov').classList.remove('open');
+}
+
+export async function confirmNpModal() {
+  const nombre = document.getElementById('np-nombre').value.trim().toUpperCase();
+  const cliente = document.getElementById('np-cliente').value || null;
+  if (!nombre) { toast('Escribe un número de parte válido.'); return; }
+  if (numerosParteDB.some(n => n.nombre === nombre)) { toast('Ya existe ese número de parte.'); return; }
+
+  const { data, error } = await supabase.from('numeros_parte').insert({ nombre, cliente }).select().single();
+  if (error) { toast(error.code === '23505' ? 'Ya existe ese número de parte.' : 'Error al agregar: ' + error.message, true); return; }
+
+  const np = mapNumeroParte(data);
+  numerosParteDB.push(np);
+  ['m1-np', 'm2-np'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const o = document.createElement('option');
+    o.value = np.nombre; o.textContent = np.nombre;
+    sel.appendChild(o);
+  });
+  rendNumerosParte();
+  closeNpModal();
+  toast('"' + nombre + '" agregado');
 }
 
 export async function fetchNumerosParte() {
@@ -104,7 +137,7 @@ export function rendNumerosParte() {
     <div class="lata-row">
       <div>
         <div class="lata-qty" style="font-size:14px">${esc(n.nombre)}</div>
-        <div style="font-size:11px;color:var(--muted)">${n.estado === 'abierto' ? 'Abierto desde ' + fF(n.fechaApertura) : 'Cerrado ' + fF(n.fechaCierre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${n.cliente ? esc(n.cliente) + ' · ' : ''}${n.estado === 'abierto' ? 'Abierto desde ' + fF(n.fechaApertura) : 'Cerrado ' + fF(n.fechaCierre)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         ${n.estado === 'abierto'

@@ -4,13 +4,13 @@ import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
 import { openManageModal, closeManageModal, deleteManageItem } from './catalogManage.js';
-import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte, eliminarNumeroParte, eliminarLote } from './m1.js';
+import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte, eliminarNumeroParte, eliminarLote, openNpModal, closeNpModal, confirmNpModal } from './m1.js';
 import {
   guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
 import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } from './m3.js';
-import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
+import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP, toggleProduccionNP } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 import { fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto } from './proyectos.js';
@@ -20,12 +20,12 @@ import { fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModa
 Object.assign(window, {
   showPage, openModal, closeModal, confirmModal,
   openManageModal, closeManageModal, deleteManageItem,
-  guarM1, limpM1, cerrarNumeroParte, eliminarNumeroParte, eliminarLote,
+  guarM1, limpM1, cerrarNumeroParte, eliminarNumeroParte, eliminarLote, openNpModal, closeNpModal, confirmNpModal,
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog,
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
-  renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
+  renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP, toggleProduccionNP,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,
   fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto,
 });
@@ -80,6 +80,7 @@ async function initApp() {
   populateLookupSelect('m2-equipo', lookups.equipos);
   populateLookupSelect('m1-np', lookups.numerosParte);
   populateLookupSelect('m2-np', lookups.numerosParte);
+  populateLookupSelect('np-cliente', lookups.clientes);
 
   renderEmpleadoChecklist([]);
   rendNumerosParte();

@@ -216,6 +216,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .btn-refresh:disabled{opacity:.4;cursor:not-allowed}
 .updated{font-size:11px;color:var(--muted);text-align:right;margin-top:6px}
 
+/* ── DASHBOARD: producción por número de parte ── */
+.np-prod-row{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);margin-bottom:8px;overflow:hidden;box-shadow:var(--sh-sm)}
+.np-prod-hd{display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer;transition:var(--tr)}
+.np-prod-hd:hover{background:var(--g50)}
+.np-prod-main{flex:1;min-width:0}
+.np-prod-name{font-size:14px;font-weight:600;color:var(--b900)}
+.np-prod-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.np-prod-stat{text-align:right;flex-shrink:0;min-width:76px}
+.np-prod-stat-v{font-size:13px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+.np-prod-stat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px}
+.np-prod-chev{font-size:11px;color:var(--muted);flex-shrink:0;width:14px;text-align:center}
+.np-prod-detail{border-top:1px solid var(--g100);padding:6px 16px;background:var(--g50)}
+
 /* ── DASHBOARD: navegación por día ── */
 .date-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:1.5rem;flex-wrap:wrap}
 .date-nav-current{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--b800)}

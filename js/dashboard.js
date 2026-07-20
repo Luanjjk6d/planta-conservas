@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { esc, fmt, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } from './utils.js';
+import { esc, fmt, fF, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } from './utils.js';
 import { stL } from './constants.js';
 import { mapLote } from './m1.js';
 import { mapActividad } from './m2.js';
@@ -8,6 +8,8 @@ import { mapCosto } from './m3.js';
 let chartTrend = null;
 let currentDashDate = localDateStr();
 let dashLotes = [], dashAct = [], dashCostos = {};
+let produccionNP = [];
+let expandedNP = null;
 
 async function fetchDashboardData(dateStr) {
   const [lotesRes, actRes] = await Promise.all([
@@ -202,4 +204,99 @@ async function renderTrendChart() {
       },
     },
   });
+}
+
+// ═══════════════════════════════
+// PRODUCCIÓN POR NÚMERO DE PARTE — vista de maquila: un NP puede tardar
+// varios días en cerrarse, así que esto NO se filtra por día como el
+// resto del dashboard. Junta M1 (materia prima) + M2 (actividades) + M3
+// (costos) de todos los días bajo un mismo NP.
+// ═══════════════════════════════
+async function fetchProduccionPorNP() {
+  const cutoff = shiftDate(localDateStr(), -30);
+  const { data: nps, error: npErr } = await supabase.from('numeros_parte').select('*')
+    .or(`estado.eq.abierto,fecha_cierre.gte.${cutoff}`)
+    .order('fecha_apertura', { ascending: false });
+  if (npErr || !nps.length) return [];
+
+  const nombres = nps.map(n => n.nombre);
+  const [lotesRes, actRes] = await Promise.all([
+    supabase.from('lotes').select('numero_parte, peso_kg').in('numero_parte', nombres),
+    supabase.from('actividades').select('codigo, numero_parte, fecha, proceso, peso_ingreso, peso_salida, merma').in('numero_parte', nombres),
+  ]);
+  const codigos = (actRes.data || []).map(a => a.codigo);
+  const costRes = codigos.length
+    ? await supabase.from('costos').select('actividad_codigo, total').in('actividad_codigo', codigos)
+    : { data: [] };
+  const costByCod = Object.fromEntries((costRes.data || []).map(c => [c.actividad_codigo, parseFloat(c.total) || 0]));
+
+  const abiertos = nps.filter(n => n.estado === 'abierto');
+  const cerrados = nps.filter(n => n.estado === 'cerrado');
+  return [...abiertos, ...cerrados].map(n => {
+    const lotesN = (lotesRes.data || []).filter(l => l.numero_parte === n.nombre);
+    const actN = (actRes.data || []).filter(a => a.numero_parte === n.nombre);
+    const mp = lotesN.reduce((s, l) => s + (parseFloat(l.peso_kg) || 0), 0);
+    const merma = actN.reduce((s, a) => s + (parseFloat(a.merma) || 0), 0);
+    const costo = actN.reduce((s, a) => s + (costByCod[a.codigo] || 0), 0);
+    return {
+      nombre: n.nombre, cliente: n.cliente || '', estado: n.estado,
+      fechaApertura: n.fecha_apertura, fechaCierre: n.fecha_cierre,
+      mp, merma, costo, nActividades: actN.length,
+      actividades: actN.map(a => ({
+        codigo: a.codigo, fecha: a.fecha, proc: a.proceso,
+        ping: parseFloat(a.peso_ingreso) || 0, psal: parseFloat(a.peso_salida) || 0,
+        costo: costByCod[a.codigo] || 0,
+      })).sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    };
+  });
+}
+
+export async function renderProduccionPorNP() {
+  const el = document.getElementById('d-np-body');
+  if (el) el.innerHTML = '<div class="dc-empty">Cargando...</div>';
+  produccionNP = await fetchProduccionPorNP();
+  _renderProduccionPorNPList();
+}
+
+function _renderProduccionPorNPList() {
+  const el = document.getElementById('d-np-body');
+  if (!el) return;
+  document.getElementById('d-np-badge').textContent = produccionNP.length;
+  if (!produccionNP.length) { el.innerHTML = '<div class="dc-empty">Sin producción abierta, ni cerrada en los últimos 30 días.</div>'; return; }
+
+  el.innerHTML = produccionNP.map(n => {
+    const hoy = localDateStr();
+    const dias = Math.round((new Date((n.fechaCierre || hoy) + 'T00:00:00') - new Date(n.fechaApertura + 'T00:00:00')) / 86400000) + 1;
+    const expanded = expandedNP === n.nombre;
+    return `<div class="np-prod-row">
+      <div class="np-prod-hd" onclick="toggleProduccionNP('${n.nombre}')">
+        <span class="sbadge ${n.estado === 'abierto' ? 'op' : 'fin'}">${n.estado === 'abierto' ? 'En curso' : 'Cerrado'}</span>
+        <div class="np-prod-main">
+          <div class="np-prod-name">${esc(n.nombre)}${n.cliente ? ' · ' + esc(n.cliente) : ''}</div>
+          <div class="np-prod-meta">${fF(n.fechaApertura)} → ${n.fechaCierre ? fF(n.fechaCierre) : 'en curso'} · ${dias} día${dias !== 1 ? 's' : ''} · ${n.nActividades} proceso${n.nActividades !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="np-prod-stat"><div class="np-prod-stat-v">${n.mp.toFixed(0)} kg</div><div class="np-prod-stat-l">Mat. prima</div></div>
+        <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--orange)">${n.merma.toFixed(0)} kg</div><div class="np-prod-stat-l">Merma</div></div>
+        <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--b600)">${fmt(n.costo)}</div><div class="np-prod-stat-l">Costo total</div></div>
+        <span class="np-prod-chev">${expanded ? '▲' : '▼'}</span>
+      </div>
+      ${expanded ? `<div class="np-prod-detail">${_renderNpActivities(n.actividades)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function _renderNpActivities(acts) {
+  if (!acts.length) return '<div class="dc-empty" style="padding:1rem">Sin actividades registradas.</div>';
+  return acts.map(a => {
+    const pct = a.ping > 0 ? (a.psal / a.ping * 100) : null;
+    return `<div class="di-row">
+      <span class="di-l">${fF(a.fecha)} · ${esc(a.proc)}</span>
+      <span class="di-v">${a.ping} kg → ${a.psal} kg${pct != null ? ' (' + pct.toFixed(1) + '%)' : ''} · ${fmt(a.costo)}</span>
+    </div>`;
+  }).join('');
+}
+
+export function toggleProduccionNP(nombre) {
+  expandedNP = expandedNP === nombre ? null : nombre;
+  _renderProduccionPorNPList();
 }

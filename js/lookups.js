@@ -7,16 +7,21 @@ export const TABLE_BY_SELECT = {
   'm2-equipo': 'equipos',
   'm1-np': 'numeros_parte',
   'm2-np': 'numeros_parte',
+  'np-cliente': 'clientes',
 };
 
 export async function fetchLookups() {
-  const [prodRes, procRes, eqRes, npRes] = await Promise.all([
+  const [prodRes, procRes, eqRes, npRes, cliRes] = await Promise.all([
     supabase.from('productos').select('nombre').order('nombre'),
     supabase.from('procesos').select('nombre').order('nombre'),
     supabase.from('equipos').select('nombre').order('nombre'),
     supabase.from('numeros_parte').select('nombre').eq('estado', 'abierto').order('nombre'),
+    supabase.from('clientes').select('nombre').order('nombre'),
   ]);
-  return { productos: prodRes.data || [], procesos: procRes.data || [], equipos: eqRes.data || [], numerosParte: npRes.data || [] };
+  return {
+    productos: prodRes.data || [], procesos: procRes.data || [], equipos: eqRes.data || [],
+    numerosParte: npRes.data || [], clientes: cliRes.data || [],
+  };
 }
 
 export function populateLookupSelect(selectId, rows) {
