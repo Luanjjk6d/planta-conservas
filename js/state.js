@@ -8,3 +8,4 @@ export const personalLogDB = {}; // { codigo_actividad: [{hora,h,m}, ...] } (tab
 export const empleadosEsmeraldaDB = [];  // catálogo: [{id,nombre,genero,costoHora}, ...] (tabla: empleados_esmeralda)
 export const actividadEmpleadosDB = {};  // { codigo_actividad: [{id,nombre,genero,costoHora}, ...] } (tabla: actividad_esmeralda_empleados)
 export const numerosParteDB = [];  // [{id,nombre,estado,fechaApertura,fechaCierre}, ...] (tabla: numeros_parte)
+export const proyectosDB = [];     // carga perezosa — solo se llena al abrir la pestaña Proyectos (tabla: proyectos)

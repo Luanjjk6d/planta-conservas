@@ -13,6 +13,7 @@ import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto } f
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
+import { fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto } from './proyectos.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -26,6 +27,7 @@ Object.assign(window, {
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,
+  fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto,
 });
 
 // El día seleccionado (Módulo 1/2/3) es compartido — cada cambio vuelve a

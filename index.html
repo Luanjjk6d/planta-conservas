@@ -42,6 +42,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Dashboard
   </button>
+  <button class="nb" onclick="showPage('proy',this);fetchProyectos()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg>
+    Proyectos
+  </button>
 </nav>
 
 <!-- ═══════════ MÓDULO 1 ═══════════ -->
@@ -320,6 +324,23 @@
   </div>
 </div>
 
+<!-- ═══════════ PROYECTOS ═══════════ -->
+<div id="page-proy" class="page">
+  <div class="dash">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:12px">
+      <div class="proy-filters">
+        <button class="proy-filter active" data-estado="todos" onclick="setProyectoFiltro('todos')">Todos</button>
+        <button class="proy-filter" data-estado="planificado" onclick="setProyectoFiltro('planificado')">Planificado</button>
+        <button class="proy-filter" data-estado="en_curso" onclick="setProyectoFiltro('en_curso')">En curso</button>
+        <button class="proy-filter" data-estado="pausado" onclick="setProyectoFiltro('pausado')">Pausado</button>
+        <button class="proy-filter" data-estado="completado" onclick="setProyectoFiltro('completado')">Completado</button>
+      </div>
+      <button class="btn-p" onclick="openProyectoModal()">+ Nuevo proyecto</button>
+    </div>
+    <div id="list-proy"><div class="empty" style="padding:2.5rem">Cargando...</div></div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal-ov" id="modal-ov">
   <div class="modal">
@@ -328,6 +349,30 @@
     <div class="modal-actions">
       <button class="btn-s" onclick="closeModal()">Cancelar</button>
       <button class="btn-p" onclick="confirmModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROYECTO -->
+<div class="modal-ov" id="proyecto-modal-ov">
+  <div class="modal">
+    <div class="modal-title" id="proy-modal-title">Nuevo proyecto</div>
+    <div class="field"><label>Nombre del proyecto</label><input type="text" id="proy-nombre" placeholder="Ej: Instalación nueva selladora"></div>
+    <div class="field"><label>Responsable</label><input type="text" id="proy-responsable" placeholder="Ej: Victor"></div>
+    <div class="field"><label>Estado</label>
+      <select id="proy-estado">
+        <option value="planificado">Planificado</option>
+        <option value="en_curso">En curso</option>
+        <option value="pausado">Pausado</option>
+        <option value="completado">Completado</option>
+      </select>
+    </div>
+    <div class="field"><label>Avance (%)</label><input type="number" id="proy-avance" min="0" max="100" placeholder="0"></div>
+    <div class="field"><label>Fecha meta</label><input type="date" id="proy-fecha-meta"></div>
+    <div class="field"><label>Nota (opcional)</label><input type="text" id="proy-nota" placeholder="Ej: espera repuesto"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeProyectoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmProyectoModal()">Guardar →</button>
     </div>
   </div>
 </div>
