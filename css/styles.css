@@ -216,6 +216,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .btn-refresh:disabled{opacity:.4;cursor:not-allowed}
 .updated{font-size:11px;color:var(--muted);text-align:right;margin-top:6px}
 
+/* ── DETALLE DE PRODUCCIÓN POR NP ── */
+.npd-back{display:inline-block;font-size:13px;color:var(--b600);font-weight:500;margin-bottom:1.25rem;cursor:pointer}
+.npd-back:hover{text-decoration:underline}
+.npd-header{margin-bottom:1.5rem}
+.npd-title-row{display:flex;align-items:center;gap:10px}
+.npd-title{font-size:22px;font-weight:700;color:var(--b900);font-family:'DM Mono',monospace}
+.npd-cliente{font-size:14px;color:var(--b600);font-weight:500;margin-top:4px}
+.npd-fechas{font-size:12px;color:var(--muted);margin-top:2px}
+.npd-op-group{margin-bottom:14px}
+.npd-op-group:last-child{margin-bottom:0}
+.npd-op-title{font-size:12px;font-weight:600;color:var(--b600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+
 /* ── DASHBOARD: producción por número de parte ── */
 .np-prod-row{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);margin-bottom:8px;overflow:hidden;box-shadow:var(--sh-sm)}
 .np-prod-hd{display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer;transition:var(--tr)}

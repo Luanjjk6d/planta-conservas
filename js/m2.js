@@ -47,9 +47,21 @@ export function mapActividad(row) {
     ping: parseFloat(row.peso_ingreso),
     psal: parseFloat(row.peso_salida),
     merma: parseFloat(row.merma),
+    cajas: row.cajas_producidas != null ? parseInt(row.cajas_producidas) : null,
     ...derivePersonal(row.personal_esmeralda_h, row.personal_esmeralda_m, row.personal_service_h, row.personal_service_m),
     estado: row.estado,
   };
+}
+
+// Autocompletado de batch: sugiere los batches ya usados en el NP
+// seleccionado, para que el mismo lote físico use siempre el mismo
+// número aunque pase por varios procesos y días distintos.
+export function actualizarBatchDatalist() {
+  const np = document.getElementById('m2-np').value;
+  const dl = document.getElementById('m2-batch-list');
+  if (!dl) return;
+  const batches = [...new Set(actividadesDB.filter(a => a.np === np && a.batch).map(a => a.batch))];
+  dl.innerHTML = batches.map(b => `<option value="${esc(b)}">`).join('');
 }
 
 export function mapPersonalLog(row) {
@@ -90,6 +102,7 @@ export function initM2Listeners() {
   ['m2-ini', 'm2-fin'].forEach(id => document.getElementById(id).addEventListener('change', calcDuracion));
   ['m2-ping', 'm2-psal'].forEach(id => document.getElementById(id).addEventListener('input', calcMerma));
   document.getElementById('m2-esm-employees').addEventListener('change', calcTotalPersonal);
+  document.getElementById('m2-np').addEventListener('change', actualizarBatchDatalist);
 }
 
 export function editM2(id) {
@@ -97,7 +110,9 @@ export function editM2(id) {
   if (!act) return;
   editingId = id;
   document.getElementById('m2-np').value = act.np || '';
+  actualizarBatchDatalist();
   document.getElementById('m2-batch').value = act.batch || '';
+  document.getElementById('m2-cajas').value = act.cajas != null ? act.cajas : '';
   document.getElementById('m2-proc').value = act.proc;
   document.getElementById('m2-equipo').value = act.equipo;
   document.getElementById('m2-ini').value = act.ini;
@@ -129,6 +144,8 @@ export async function guarM2() {
   const psal = parseFloat(document.getElementById('m2-psal').value) || 0;
   const svcH = parseInt(document.getElementById('m2-svc-h').value) || 0;
   const svcM = parseInt(document.getElementById('m2-svc-m').value) || 0;
+  const cajasVal = document.getElementById('m2-cajas').value;
+  const cajas = cajasVal !== '' ? parseInt(cajasVal) : null;
   const empleadoIds = getSelectedEmpleadoIds();
   const empleadosSeleccionados = empleadosEsmeraldaDB.filter(e => empleadoIds.includes(e.id));
   const esmH = empleadosSeleccionados.filter(e => e.genero === 'H').length;
@@ -147,6 +164,7 @@ export async function guarM2() {
     peso_ingreso: ping,
     peso_salida: psal,
     merma: Math.max(0, ping - psal),
+    cajas_producidas: cajas,
     personal_esmeralda_h: esmH,
     personal_esmeralda_m: esmM,
     personal_service_h: svcH,
@@ -208,8 +226,9 @@ export async function eliminarActividad(id) {
 }
 
 export function limpM2() {
-  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-svc-h', 'm2-svc-m'].forEach(id => document.getElementById(id).value = '');
+  ['m2-batch', 'm2-ping', 'm2-psal', 'm2-merma', 'm2-fin', 'm2-dur', 'm2-total-p', 'm2-svc-h', 'm2-svc-m', 'm2-cajas'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m2-np').value = stickyNp || '';
+  actualizarBatchDatalist();
   document.getElementById('m2-proc').selectedIndex = 0;
   document.getElementById('m2-equipo').selectedIndex = 0;
   document.getElementById('m2-estado').selectedIndex = 0;
@@ -239,6 +258,7 @@ export function rendM2() {
       </div>
     </div>
     ${r.ping || r.psal ? `<div class="pill"><strong>Ingreso:</strong> ${r.ping} kg → <strong>Salida:</strong> ${r.psal} kg${r.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + r.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}
+    ${r.cajas != null ? `<div class="pill gr"><strong>Cajas producidas:</strong> ${r.cajas}</div>` : ''}
     <div style="margin-top:8px;font-size:12px;color:var(--muted)">
       Esmeralda${(actividadEmpleadosDB[r.id] || []).length ? ': ' + (actividadEmpleadosDB[r.id] || []).map(e => esc(e.nombre)).join(', ') : ' — sin seleccionar'} &nbsp;|&nbsp; Service — H: ${r.svcH} · M: ${r.svcM} &nbsp;|&nbsp; Total: <strong style="color:var(--text)">${r.totalPersonal}</strong>
     </div>

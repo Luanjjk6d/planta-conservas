@@ -123,7 +123,11 @@
         </div>
       </div>
 
-      <div class="field"><label>Número de batch</label><input type="text" id="m2-batch" placeholder="Ej: B-0001"></div>
+      <div class="field">
+        <label>Número de batch</label>
+        <input type="text" id="m2-batch" list="m2-batch-list" placeholder="Ej: 1, B-0001... — mismo batch en cada etapa">
+        <datalist id="m2-batch-list"></datalist>
+      </div>
 
       <div class="field">
         <label>Proceso / etapa</label>
@@ -157,6 +161,7 @@
         <div class="field"><label>Peso de ingreso (kg)</label><input type="number" id="m2-ping" placeholder="0.0" min="0" step="0.1"></div>
         <div class="field"><label>Peso de salida (kg)</label><input type="number" id="m2-psal" placeholder="0.0" min="0" step="0.1"></div>
       </div>
+      <div class="field"><label>Cajas producidas (opcional)</label><input type="number" id="m2-cajas" placeholder="Ej: 120 — normalmente en Envasado" min="0" step="1"></div>
       <div class="field"><label>Merma generada (kg) — automática</label><input type="number" id="m2-merma" readonly placeholder="Calculado automáticamente"></div>
 
       <div class="field"><label>Estado del proceso</label>
@@ -328,6 +333,43 @@
       <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tendencia — últimos 7 días</span></div><div class="dc-body"><div style="height:220px"><canvas id="chart-trend"></canvas></div></div></div>
     </div>
     <div class="updated" id="d-updated"></div>
+  </div>
+</div>
+
+<!-- ═══════════ DETALLE DE PRODUCCIÓN POR NP ═══════════ -->
+<div id="page-np-detail" class="page">
+  <div class="dash">
+    <a href="#" onclick="volverAProduccion();return false;" class="npd-back">‹ Volver al Dashboard</a>
+
+    <div class="npd-header">
+      <div class="npd-title-row">
+        <div class="npd-title" id="npd-title"></div>
+        <span class="sbadge" id="npd-badge"></span>
+      </div>
+      <div class="npd-cliente" id="npd-cliente"></div>
+      <div class="npd-fechas" id="npd-fechas"></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="npd-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
+      <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="npd-merma">0</div><div class="kpi-s">kg generados</div></div>
+      <div class="kpi green"><div class="kpi-l">Cajas producidas</div><div class="kpi-v" id="npd-cajas">0</div><div class="kpi-s">total del NP</div></div>
+      <div class="kpi purple"><div class="kpi-l">Costo total</div><div class="kpi-v" id="npd-costo">S/.0</div><div class="kpi-s">producción completa</div></div>
+    </div>
+
+    <div class="dg">
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Rendimiento por operación</span></div><div class="dc-body" id="npd-operaciones"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Cajas producidas por día</span></div><div class="dc-body" id="npd-cajas-dia"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tiempo por proceso</span></div><div class="dc-body" id="npd-tiempos"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <p class="stitle">Todas las actividades</p>
+      <div id="npd-timeline"></div>
+    </div>
   </div>
 </div>
 
