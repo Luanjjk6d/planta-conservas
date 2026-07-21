@@ -146,8 +146,8 @@
           <select id="m2-equipo">
             <option value="">Seleccionar equipo...</option>
           </select>
-          <button class="btn-add" onclick="openModal('m2-equipo','Agregar equipo','Ej: SELLADORA...')">+</button>
-          <button class="btn-x" title="Eliminar equipos" onclick="openManageModal('m2-equipo','Equipos')">×</button>
+          <button class="btn-add" onclick="openEquipoModal()">+</button>
+          <button class="btn-x" title="Gestionar equipos" onclick="openManageModal('m2-equipo','Equipos')">×</button>
         </div>
       </div>
 
@@ -465,14 +465,27 @@
   </div>
 </div>
 
-<!-- MODAL COSTO DE EQUIPO -->
-<div class="modal-ov" id="costo-equipo-modal-ov">
+<!-- MODAL EQUIPO (agregar / editar) -->
+<div class="modal-ov" id="equipo-modal-ov">
   <div class="modal">
-    <div class="modal-title">Costo por hora — <span id="costo-equipo-nombre"></span></div>
-    <div class="field"><label>S/. por hora</label><input type="number" id="costo-equipo-input" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-title" id="equipo-modal-title">Agregar equipo</div>
+    <div class="field"><label>Nombre del equipo</label><input type="text" id="equipo-nombre-input" placeholder="Ej: SELLADORA..."></div>
+    <div class="field"><label>Costo por hora (S/.)</label><input type="number" id="equipo-costo-input" placeholder="0.00" min="0" step="0.01"></div>
     <div class="modal-actions">
-      <button class="btn-s" onclick="closeCostoEquipoModal()">Cancelar</button>
-      <button class="btn-p" onclick="confirmCostoEquipoModal()">Guardar →</button>
+      <button class="btn-s" onclick="closeEquipoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmEquipoModal()">Guardar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COSTO DE EMPLEADO ESMERALDA (desde Módulo 3) -->
+<div class="modal-ov" id="costo-empleado-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Costo por hora — <span id="costo-empleado-nombre"></span></div>
+    <div class="field"><label>S/. por hora</label><input type="number" id="costo-empleado-input" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeCostoEmpleadoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmCostoEmpleadoModal()">Guardar →</button>
     </div>
   </div>
 </div>

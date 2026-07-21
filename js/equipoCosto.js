@@ -15,29 +15,50 @@ export async function fetchEquipos() {
   return data.map(mapEquipo);
 }
 
-export function openCostoEquipoModal(id, nombre, costoActual) {
+// Un solo modal sirve para agregar (id=null) y editar (id dado) — así el
+// costo por hora se puede fijar apenas se crea el equipo, no solo después.
+export function openEquipoModal(id = null) {
   editingId = id;
-  document.getElementById('costo-equipo-nombre').textContent = nombre;
-  document.getElementById('costo-equipo-input').value = costoActual || '';
-  document.getElementById('costo-equipo-modal-ov').classList.add('open');
-  setTimeout(() => document.getElementById('costo-equipo-input').focus(), 100);
+  const eq = id ? equiposDB.find(e => e.id === id) : null;
+  document.getElementById('equipo-modal-title').textContent = id ? 'Editar equipo' : 'Agregar equipo';
+  document.getElementById('equipo-nombre-input').value = eq?.nombre || '';
+  document.getElementById('equipo-costo-input').value = eq ? eq.costoHora : '';
+  document.getElementById('equipo-modal-ov').classList.add('open');
+  setTimeout(() => document.getElementById('equipo-nombre-input').focus(), 100);
 }
 
-export function closeCostoEquipoModal() {
-  document.getElementById('costo-equipo-modal-ov').classList.remove('open');
+export function closeEquipoModal() {
+  document.getElementById('equipo-modal-ov').classList.remove('open');
   editingId = null;
 }
 
-export async function confirmCostoEquipoModal() {
-  if (!editingId) return;
-  const costo = parseFloat(document.getElementById('costo-equipo-input').value) || 0;
-  const { error } = await supabase.from('equipos').update({ costo_hora: costo }).eq('id', editingId);
-  if (error) { toast('Error al guardar: ' + error.message, true); return; }
+export async function confirmEquipoModal() {
+  const nombre = document.getElementById('equipo-nombre-input').value.trim().toUpperCase();
+  const costoHora = parseFloat(document.getElementById('equipo-costo-input').value) || 0;
+  if (!nombre) { toast('Escribe un nombre válido.'); return; }
 
-  const eq = equiposDB.find(e => e.id === editingId);
-  if (eq) eq.costoHora = costo;
-
-  closeCostoEquipoModal();
+  if (editingId) {
+    const { data, error } = await supabase.from('equipos').update({ nombre, costo_hora: costoHora }).eq('id', editingId).select().single();
+    if (error) { toast(error.code === '23505' ? 'Ya existe ese equipo.' : 'Error: ' + error.message, true); return; }
+    const idx = equiposDB.findIndex(e => e.id === editingId);
+    const nombreAnterior = equiposDB[idx].nombre;
+    equiposDB[idx] = mapEquipo(data);
+    const sel = document.getElementById('m2-equipo');
+    const opt = Array.from(sel.options).find(o => o.value === nombreAnterior);
+    if (opt) { opt.value = nombre; opt.textContent = nombre; if (sel.value === nombreAnterior) sel.value = nombre; }
+    toast('Equipo actualizado');
+  } else {
+    if (equiposDB.some(e => e.nombre === nombre)) { toast('Ya existe ese equipo.'); return; }
+    const { data, error } = await supabase.from('equipos').insert({ nombre, costo_hora: costoHora }).select().single();
+    if (error) { toast(error.code === '23505' ? 'Ya existe ese equipo.' : 'Error: ' + error.message, true); return; }
+    equiposDB.push(mapEquipo(data));
+    const sel = document.getElementById('m2-equipo');
+    const o = document.createElement('option');
+    o.value = nombre; o.textContent = nombre;
+    sel.appendChild(o);
+    sel.value = nombre;
+    toast('"' + nombre + '" agregado');
+  }
+  closeEquipoModal();
   await refreshManageList();
-  toast('Costo actualizado');
 }

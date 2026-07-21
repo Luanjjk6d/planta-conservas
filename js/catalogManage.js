@@ -36,7 +36,7 @@ async function _renderManageList() {
         ${esEquipo ? `<div style="font-size:11px;color:var(--muted)">S/.${(parseFloat(r.costo_hora) || 0).toFixed(2)} / hora</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        ${esEquipo ? `<button class="btn-s" style="padding:6px 10px;font-size:12px" onclick="openCostoEquipoModal(${r.id},'${esc(r.nombre).replace(/'/g, "\\'")}',${parseFloat(r.costo_hora) || 0})">Editar costo</button>` : ''}
+        ${esEquipo ? `<button class="btn-s" style="padding:6px 10px;font-size:12px" onclick="openEquipoModal(${r.id})">Editar</button>` : ''}
         <button class="btn-x" title="Eliminar" onclick="deleteManageItem(${r.id},'${esc(r.nombre).replace(/'/g, "\\'")}')">×</button>
       </div>
     </div>`).join('');

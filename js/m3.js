@@ -175,10 +175,19 @@ function _renderEsmeraldaList(id) {
   const empleados = actividadEmpleadosDB[id] || [];
   if (!empleados.length) return '<div style="font-size:12px;color:var(--muted)">Sin empleados seleccionados en Módulo 2.</div>';
   return empleados.map(e => `
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text)">
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text)">
       <span>${esc(e.nombre)} <span style="color:var(--muted)">(${e.genero})</span></span>
-      <span style="font-family:'DM Mono',monospace;color:var(--muted)">S/.${e.costoHora.toFixed(2)}/h</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'DM Mono',monospace;color:var(--muted)">S/.${e.costoHora.toFixed(2)}/h</span>
+        <a href="#" onclick="openCostoEmpleadoModal(${e.id});return false;" style="font-size:11px;color:var(--b600);font-weight:500">Editar</a>
+      </span>
     </div>`).join('');
+}
+
+// Vuelve a renderizar el panel de detalle si hay una actividad seleccionada
+// — se usa después de editar el costo/hora de un empleado desde ese panel.
+export function refreshM3Panel() {
+  if (selectedActId) selectActividad(selectedActId);
 }
 
 function _renderBreakdownRows(c, act) {

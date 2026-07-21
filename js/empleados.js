@@ -2,6 +2,9 @@ import { supabase } from './supabaseClient.js';
 import { empleadosEsmeraldaDB, actividadEmpleadosDB } from './state.js';
 import { esc, toast } from './utils.js';
 import { rendM2 } from './m2.js';
+import { refreshM3Panel } from './m3.js';
+
+let editingCostoId = null;
 
 export function mapEmpleado(row) {
   return { id: row.id, nombre: row.nombre, genero: row.genero, costoHora: parseFloat(row.costo_hora) || 0 };
@@ -52,6 +55,38 @@ export async function eliminarEmpleado(id) {
   renderEmpleadoChecklist(getSelectedEmpleadoIds());
   rendM2();
   toast(`"${emp?.nombre}" eliminado`);
+}
+
+// Editar costo/hora de un empleado — se ofrece desde Módulo 3 (donde se
+// costea), no desde el checklist de Módulo 2 (que a propósito no muestra
+// montos por confidencialidad).
+export function openCostoEmpleadoModal(id) {
+  const emp = empleadosEsmeraldaDB.find(e => e.id === id);
+  if (!emp) return;
+  editingCostoId = id;
+  document.getElementById('costo-empleado-nombre').textContent = emp.nombre;
+  document.getElementById('costo-empleado-input').value = emp.costoHora;
+  document.getElementById('costo-empleado-modal-ov').classList.add('open');
+  setTimeout(() => document.getElementById('costo-empleado-input').focus(), 100);
+}
+
+export function closeCostoEmpleadoModal() {
+  document.getElementById('costo-empleado-modal-ov').classList.remove('open');
+  editingCostoId = null;
+}
+
+export async function confirmCostoEmpleadoModal() {
+  if (!editingCostoId) return;
+  const costoHora = parseFloat(document.getElementById('costo-empleado-input').value) || 0;
+  const { error } = await supabase.from('empleados_esmeralda').update({ costo_hora: costoHora }).eq('id', editingCostoId);
+  if (error) { toast('Error al guardar: ' + error.message, true); return; }
+
+  const emp = empleadosEsmeraldaDB.find(e => e.id === editingCostoId);
+  if (emp) emp.costoHora = costoHora;
+
+  closeCostoEmpleadoModal();
+  refreshM3Panel();
+  toast('Costo actualizado');
 }
 
 export function getSelectedEmpleadoIds() {
