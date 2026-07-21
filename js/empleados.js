@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { empleadosEsmeraldaDB, actividadEmpleadosDB } from './state.js';
 import { esc, toast } from './utils.js';
+import { rendM2 } from './m2.js';
 
 export function mapEmpleado(row) {
   return { id: row.id, nombre: row.nombre, genero: row.genero, costoHora: parseFloat(row.costo_hora) || 0 };
@@ -40,12 +41,16 @@ export function renderEmpleadoChecklist(selectedIds = []) {
 
 export async function eliminarEmpleado(id) {
   const emp = empleadosEsmeraldaDB.find(e => e.id === id);
-  if (!confirm(`¿Eliminar a "${emp?.nombre}" del catálogo?`)) return;
+  if (!confirm(`¿Eliminar a "${emp?.nombre}" del catálogo? Se quitará de las actividades donde participó (los costos ya guardados no cambian).`)) return;
   const { error } = await supabase.from('empleados_esmeralda').delete().eq('id', id);
   if (error) { toast('Error al eliminar: ' + error.message, true); return; }
   const idx = empleadosEsmeraldaDB.findIndex(e => e.id === id);
   if (idx !== -1) empleadosEsmeraldaDB.splice(idx, 1);
+  Object.keys(actividadEmpleadosDB).forEach(actId => {
+    actividadEmpleadosDB[actId] = actividadEmpleadosDB[actId].filter(e => e.id !== id);
+  });
   renderEmpleadoChecklist(getSelectedEmpleadoIds());
+  rendM2();
   toast(`"${emp?.nombre}" eliminado`);
 }
 
