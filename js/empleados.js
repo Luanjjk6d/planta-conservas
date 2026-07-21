@@ -2,12 +2,12 @@ import { supabase } from './supabaseClient.js';
 import { empleadosEsmeraldaDB, actividadEmpleadosDB } from './state.js';
 import { esc, toast } from './utils.js';
 import { rendM2 } from './m2.js';
-import { refreshM3Panel } from './m3.js';
+import { refrescarChecklistPersonalDia } from './costeoDia.js';
 
 let editingCostoId = null;
 
 export function mapEmpleado(row) {
-  return { id: row.id, nombre: row.nombre, genero: row.genero, costoHora: parseFloat(row.costo_hora) || 0 };
+  return { id: row.id, nombre: row.nombre, genero: row.genero, costoDia: parseFloat(row.costo_dia) || 0 };
 }
 
 export async function fetchEmpleados() {
@@ -18,7 +18,7 @@ export async function fetchEmpleados() {
 
 export async function fetchActividadEmpleados() {
   const { data, error } = await supabase.from('actividad_esmeralda_empleados')
-    .select('actividad_codigo, empleados_esmeralda(id, nombre, genero, costo_hora)');
+    .select('actividad_codigo, empleados_esmeralda(id, nombre, genero, costo_dia)');
   if (error) { toast('Error al cargar personal Esmeralda: ' + error.message, true); return; }
   data.forEach(row => {
     const emp = mapEmpleado(row.empleados_esmeralda);
@@ -57,15 +57,15 @@ export async function eliminarEmpleado(id) {
   toast(`"${emp?.nombre}" eliminado`);
 }
 
-// Editar costo/hora de un empleado — se ofrece desde Módulo 3 (donde se
-// costea), no desde el checklist de Módulo 2 (que a propósito no muestra
+// Editar costo/día de un empleado — se ofrece desde el Dashboard (Personal
+// del día), no desde el checklist de Módulo 2 (que a propósito no muestra
 // montos por confidencialidad).
 export function openCostoEmpleadoModal(id) {
   const emp = empleadosEsmeraldaDB.find(e => e.id === id);
   if (!emp) return;
   editingCostoId = id;
   document.getElementById('costo-empleado-nombre').textContent = emp.nombre;
-  document.getElementById('costo-empleado-input').value = emp.costoHora;
+  document.getElementById('costo-empleado-input').value = emp.costoDia;
   document.getElementById('costo-empleado-modal-ov').classList.add('open');
   setTimeout(() => document.getElementById('costo-empleado-input').focus(), 100);
 }
@@ -77,15 +77,15 @@ export function closeCostoEmpleadoModal() {
 
 export async function confirmCostoEmpleadoModal() {
   if (!editingCostoId) return;
-  const costoHora = parseFloat(document.getElementById('costo-empleado-input').value) || 0;
-  const { error } = await supabase.from('empleados_esmeralda').update({ costo_hora: costoHora }).eq('id', editingCostoId);
+  const costoDia = parseFloat(document.getElementById('costo-empleado-input').value) || 0;
+  const { error } = await supabase.from('empleados_esmeralda').update({ costo_dia: costoDia }).eq('id', editingCostoId);
   if (error) { toast('Error al guardar: ' + error.message, true); return; }
 
   const emp = empleadosEsmeraldaDB.find(e => e.id === editingCostoId);
-  if (emp) emp.costoHora = costoHora;
+  if (emp) emp.costoDia = costoDia;
 
   closeCostoEmpleadoModal();
-  refreshM3Panel();
+  refrescarChecklistPersonalDia();
   toast('Costo actualizado');
 }
 
@@ -108,12 +108,12 @@ export function closeEmpleadoModal() {
 export async function confirmEmpleadoModal() {
   const nombre = document.getElementById('empleado-nombre').value.trim().toUpperCase();
   const genero = document.getElementById('empleado-genero').value;
-  const costoHora = parseFloat(document.getElementById('empleado-costo').value) || 0;
+  const costoDia = parseFloat(document.getElementById('empleado-costo').value) || 0;
   if (!nombre) { toast('Escribe un nombre válido.'); return; }
   if (empleadosEsmeraldaDB.some(e => e.nombre === nombre)) { toast('Ya existe ese empleado.'); return; }
 
   const { data, error } = await supabase.from('empleados_esmeralda')
-    .insert({ nombre, genero, costo_hora: costoHora }).select().single();
+    .insert({ nombre, genero, costo_dia: costoDia }).select().single();
   if (error) { toast(error.code === '23505' ? 'Ya existe ese empleado.' : 'Error: ' + error.message, true); return; }
 
   empleadosEsmeraldaDB.push(mapEmpleado(data));

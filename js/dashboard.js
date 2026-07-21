@@ -5,6 +5,7 @@ import { mapLote } from './m1.js';
 import { mapActividad } from './m2.js';
 import { mapCosto } from './m3.js';
 import { m1Data, actividadesDB, costosDB, numerosParteDB } from './state.js';
+import { cargarPersonalDia, renderResumenCostosDia } from './costeoDia.js';
 
 let chartTrend = null;
 let currentDashDate = localDateStr();
@@ -45,6 +46,8 @@ export async function renderDash(dateStr = currentDashDate) {
   dashLotes = result.lotes; dashAct = result.act; dashCostos = result.costos;
   updateDateNav();
   _renderLineaProduccionDia();
+  cargarPersonalDia(dateStr);
+  renderResumenCostosDia(dateStr);
 
   const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
   const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);

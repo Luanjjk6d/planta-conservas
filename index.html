@@ -265,11 +265,24 @@
       </div>
 
       <div class="divider"></div>
-      <p class="stitle">Resumen de costos</p>
+      <p class="stitle">Resumen de costos por actividad</p>
       <div class="costos-summary">
-        <div class="ck"><div class="ck-l">S/. Personal total</div><div class="ck-v" id="sum-mo">0.00</div></div>
-        <div class="ck"><div class="ck-l">S/. Máq. + Servicios</div><div class="ck-v" id="sum-maq">0.00</div></div>
-        <div class="ck"><div class="ck-l">S/. Total producción</div><div class="ck-v" id="sum-total">0.00</div></div>
+        <div class="ck"><div class="ck-l">S/. Máquinas (incl. vapor/agua/luz)</div><div class="ck-v" id="sum-maq">0.00</div></div>
+        <div class="ck"><div class="ck-l">S/. Otros costos</div><div class="ck-v" id="sum-otros">0.00</div></div>
+        <div class="ck"><div class="ck-l">S/. Total actividades</div><div class="ck-v" id="sum-total">0.00</div></div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Costos del día</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Costos fijos que no dependen de una actividad puntual — Personal Esmeralda/Service se declara ahora en el <strong>Dashboard</strong>.</p>
+      <div class="field"><label>Cantidad de canastillas (S/.1.30 c/u)</label><input type="number" id="cd-canastillas" placeholder="0" min="0" step="1" oninput="calcularCostosDia()"></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
+        <input type="checkbox" id="cd-combustible" onchange="calcularCostosDia()" style="width:auto">
+        <label style="margin:0">Combustible (S/.500 fijo del día)</label>
+      </div>
+      <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total costos fijos del día</span><span class="di-v" id="cd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
+      <div class="bgrp" style="margin-top:.75rem">
+        <button class="btn-p" id="cd-save-btn" onclick="guardarCostosDia()">Guardar →</button>
       </div>
     </div>
 
@@ -313,6 +326,34 @@
 
     <p class="stitle">Línea de producción del día</p>
     <div class="npd-linea" id="d-linea"></div>
+
+    <div class="dg">
+      <div class="dc">
+        <div class="dc-hdr"><span class="dc-title">Personal del día</span></div>
+        <div class="dc-body">
+          <div class="subgroup-title">Personal Esmeralda (participaron hoy)</div>
+          <div id="pd-esm-list" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white);margin-bottom:.75rem"></div>
+
+          <div class="subgroup-title">Personal Service</div>
+          <div class="frow">
+            <div class="field"><label>Hombres</label><input type="number" id="pd-svc-h" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+            <div class="field"><label>Mujeres</label><input type="number" id="pd-svc-m" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+          </div>
+          <div class="frow">
+            <div class="field"><label>S/. por hora</label><input type="number" id="pd-svc-costo" placeholder="0.00" min="0" step="0.01" oninput="calcularPersonalDia()"></div>
+            <div class="field"><label>Horas del día</label><input type="number" id="pd-horas" placeholder="0" min="0" step="0.5" oninput="calcularPersonalDia()"></div>
+          </div>
+          <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total personal del día</span><span class="di-v" id="pd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
+          <div class="bgrp" style="margin-top:.75rem">
+            <button class="btn-p" id="pd-save-btn" onclick="guardarPersonalDia()">Guardar →</button>
+          </div>
+        </div>
+      </div>
+      <div class="dc">
+        <div class="dc-hdr"><span class="dc-title">Resumen de costos del día</span></div>
+        <div class="dc-body" id="d-resumen-costos"><div class="dc-empty">Sin datos</div></div>
+      </div>
+    </div>
 
     <div class="kpi-grid kpi-grid-3">
       <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="d-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
@@ -481,8 +522,8 @@
 <!-- MODAL COSTO DE EMPLEADO ESMERALDA (desde Módulo 3) -->
 <div class="modal-ov" id="costo-empleado-modal-ov">
   <div class="modal">
-    <div class="modal-title">Costo por hora — <span id="costo-empleado-nombre"></span></div>
-    <div class="field"><label>S/. por hora</label><input type="number" id="costo-empleado-input" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-title">Costo por día — <span id="costo-empleado-nombre"></span></div>
+    <div class="field"><label>S/. por día</label><input type="number" id="costo-empleado-input" placeholder="0.00" min="0" step="0.01"></div>
     <div class="modal-actions">
       <button class="btn-s" onclick="closeCostoEmpleadoModal()">Cancelar</button>
       <button class="btn-p" onclick="confirmCostoEmpleadoModal()">Guardar →</button>
@@ -498,7 +539,7 @@
     <div class="field"><label>Género</label>
       <select id="empleado-genero"><option value="H">Hombre</option><option value="M">Mujer</option></select>
     </div>
-    <div class="field"><label>Costo por hora (S/.)</label><input type="number" id="empleado-costo" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="field"><label>Costo por día (S/.)</label><input type="number" id="empleado-costo" placeholder="0.00" min="0" step="0.01"></div>
     <div class="modal-actions">
       <button class="btn-s" onclick="closeEmpleadoModal()">Cancelar</button>
       <button class="btn-p" onclick="confirmEmpleadoModal()">Agregar →</button>

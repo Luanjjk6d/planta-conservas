@@ -1,33 +1,18 @@
 import { supabase } from './supabaseClient.js';
-import { actividadesDB, costosDB, actividadEmpleadosDB, equiposDB } from './state.js';
+import { actividadesDB, costosDB, equiposDB } from './state.js';
 import { esc, fmt, fmtN, mHM, toast } from './utils.js';
 import { stL } from './constants.js';
 import { rendM2 } from './m2.js';
 import { viewDate } from './viewDate.js';
+import { cargarCostosDia } from './costeoDia.js';
 
 let selectedActId = null;
 
 export function mapCosto(row) {
   return {
-    costoEsm: parseFloat(row.costo_esm) || 0,
-    costoSvc: parseFloat(row.costo_svc) || 0,
     costoMaq: parseFloat(row.costo_maq) || 0,
     costoOtros: parseFloat(row.costo_otros) || 0,
-    cEsm: parseFloat(row.c_esm) || 0,
-    cSvc: parseFloat(row.c_svc) || 0,
     cMaq: parseFloat(row.c_maq) || 0,
-    consEnergia: parseFloat(row.consumo_energia_kwh) || 0,
-    costoEnergia: parseFloat(row.costo_energia_kwh) || 0,
-    cEnergia: parseFloat(row.c_energia) || 0,
-    consVapor: parseFloat(row.consumo_vapor_m3) || 0,
-    costoVapor: parseFloat(row.costo_vapor_m3) || 0,
-    cVapor: parseFloat(row.c_vapor) || 0,
-    consAguaOsmo: parseFloat(row.consumo_agua_osmo_m3) || 0,
-    costoAguaOsmo: parseFloat(row.costo_agua_osmo_m3) || 0,
-    cAguaOsmo: parseFloat(row.c_agua_osmo) || 0,
-    consAguaSalobre: parseFloat(row.consumo_agua_salobre_m3) || 0,
-    costoAguaSalobre: parseFloat(row.costo_agua_salobre_m3) || 0,
-    cAguaSalobre: parseFloat(row.c_agua_salobre) || 0,
     total: parseFloat(row.total) || 0,
     costoPorKgSal: parseFloat(row.costo_por_kg_sal) || 0,
     costoPorKgIng: parseFloat(row.costo_por_kg_ing) || 0,
@@ -35,6 +20,7 @@ export function mapCosto(row) {
 }
 
 export function renderM3() {
+  cargarCostosDia(viewDate.current);
   const listEl = document.getElementById('m3-actividades-list');
   const dayData = actividadesDB.filter(a => a.fecha === viewDate.current);
   if (!dayData.length) {
@@ -101,41 +87,15 @@ export function selectActividad(id) {
         </div>
       </div>
 
-      <!-- INPUTS ECONÓMICOS — 5 categorías -->
+      <!-- INPUTS ECONÓMICOS — costeo por actividad se reduce a Máquina + Otros;
+           Personal Esmeralda/Service ahora se declara por día en el Dashboard. -->
       <div class="cd-section">
         <div class="cd-section-title">Ingresar costos en soles (S/. por hora)</div>
         <div class="cd-grid" style="gap:10px">
           <div class="cd-input-row">
-            <label>Personal Esmeralda (costo predeterminado)</label>
-            <div id="ci-esm-list" style="display:flex;flex-direction:column;gap:4px">
-              ${_renderEsmeraldaList(id)}
-            </div>
-          </div>
-          <div class="cd-input-row">
-            <label>S/. Personal Service / hora</label>
-            <input type="number" id="ci-svc" value="${prev.costoSvc || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">${act.svc} personas × ${act.durHoras.toFixed(2)} h</span>
-          </div>
-          <div class="cd-input-row">
             <label>S/. Costo de máquina / hora</label>
             <input type="number" id="ci-maq" value="${prev.costoMaq ?? (equipoPred ? equipoPred.costoHora : '')}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">Equipo: ${esc(act.equipo)} × ${act.durHoras.toFixed(2)} h${equipoPred ? ' · predeterminado' : ''}</span>
-          </div>
-          <div class="cd-input-row">
-            <label>S/. Energía eléctrica / hora</label>
-            <input type="number" id="ci-energia-costo" value="${prev.costoEnergia || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-          </div>
-          <div class="cd-input-row">
-            <label>S/. Vapor / hora</label>
-            <input type="number" id="ci-vapor-costo" value="${prev.costoVapor || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-          </div>
-          <div class="cd-input-row">
-            <label>S/. Agua Osmotizada / hora</label>
-            <input type="number" id="ci-agua-osmo-costo" value="${prev.costoAguaOsmo || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-          </div>
-          <div class="cd-input-row">
-            <label>S/. Agua Salobre / hora</label>
-            <input type="number" id="ci-agua-salobre-costo" value="${prev.costoAguaSalobre || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
+            <span style="font-size:10px;color:var(--muted);margin-top:2px">Equipo: ${esc(act.equipo)} × ${act.durHoras.toFixed(2)} h${equipoPred ? ' · predeterminado, incluye vapor/agua/luz' : ''}</span>
           </div>
           <div class="cd-input-row">
             <label>S/. Otros costos (monto fijo)</label>
@@ -168,37 +128,12 @@ export function selectActividad(id) {
         <button class="btn-p" id="m3-save-btn" onclick="guardarCosto('${id}')">Guardar costos →</button>
       </div>
     </div>`;
-  if (prev.costoEsm || prev.costoSvc || prev.costoMaq || prev.cEnergia || prev.cVapor || prev.cAguaOsmo || prev.cAguaSalobre || (actividadEmpleadosDB[id] || []).length || equipoPred?.costoHora) calcCostoDetalle(id);
-}
-
-function _renderEsmeraldaList(id) {
-  const empleados = actividadEmpleadosDB[id] || [];
-  if (!empleados.length) return '<div style="font-size:12px;color:var(--muted)">Sin empleados seleccionados en Módulo 2.</div>';
-  return empleados.map(e => `
-    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text)">
-      <span>${esc(e.nombre)} <span style="color:var(--muted)">(${e.genero})</span></span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span style="font-family:'DM Mono',monospace;color:var(--muted)">S/.${e.costoHora.toFixed(2)}/h</span>
-        <a href="#" onclick="openCostoEmpleadoModal(${e.id});return false;" style="font-size:11px;color:var(--b600);font-weight:500">Editar</a>
-      </span>
-    </div>`).join('');
-}
-
-// Vuelve a renderizar el panel de detalle si hay una actividad seleccionada
-// — se usa después de editar el costo/hora de un empleado desde ese panel.
-export function refreshM3Panel() {
-  if (selectedActId) selectActividad(selectedActId);
+  if (prev.costoMaq || prev.costoOtros || equipoPred?.costoHora) calcCostoDetalle(id);
 }
 
 function _renderBreakdownRows(c, act) {
   const rows = [
-    { l: 'Personal Esmeralda', f: `Suma de tarifas: S/.${(c.costoEsm || 0).toFixed(2)}/h × ${act.durHoras.toFixed(2)}h`, v: c.cEsm },
-    { l: 'Personal Service', f: `${act.svc}p × ${act.durHoras.toFixed(2)}h × S/.${(c.costoSvc || 0).toFixed(2)}/h`, v: c.cSvc },
     { l: 'Máquina / Equipo', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoMaq || 0).toFixed(2)}/h`, v: c.cMaq },
-    { l: 'Energía eléctrica', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoEnergia || 0).toFixed(2)}/h`, v: c.cEnergia },
-    { l: 'Vapor', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoVapor || 0).toFixed(2)}/h`, v: c.cVapor },
-    { l: 'Agua Osmotizada', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAguaOsmo || 0).toFixed(2)}/h`, v: c.cAguaOsmo },
-    { l: 'Agua Salobre', f: `${act.durHoras.toFixed(2)}h × S/.${(c.costoAguaSalobre || 0).toFixed(2)}/h`, v: c.cAguaSalobre },
     { l: 'Otros costos', f: 'Monto fijo', v: c.costoOtros || 0 },
   ];
   return rows.map(r => `
@@ -211,35 +146,16 @@ function _renderBreakdownRows(c, act) {
 export function calcCostoDetalle(id) {
   const act = actividadesDB.find(a => a.id === id);
   if (!act) return;
-  const empleados = actividadEmpleadosDB[id] || [];
-  const costoEsm = empleados.reduce((s, e) => s + e.costoHora, 0);
-  const costoSvc = parseFloat(document.getElementById('ci-svc').value) || 0;
   const costoMaq = parseFloat(document.getElementById('ci-maq').value) || 0;
   const costoOtros = parseFloat(document.getElementById('ci-otros').value) || 0;
-  const costoEnergia = parseFloat(document.getElementById('ci-energia-costo').value) || 0;
-  const costoVapor = parseFloat(document.getElementById('ci-vapor-costo').value) || 0;
-  const costoAguaOsmo = parseFloat(document.getElementById('ci-agua-osmo-costo').value) || 0;
-  const costoAguaSalobre = parseFloat(document.getElementById('ci-agua-salobre-costo').value) || 0;
 
   const h = act.durHoras;
-  const cEsm = h * costoEsm;
-  const cSvc = act.svc * h * costoSvc;
   const cMaq = h * costoMaq;
-  const cEnergia = h * costoEnergia;
-  const cVapor = h * costoVapor;
-  const cAguaOsmo = h * costoAguaOsmo;
-  const cAguaSalobre = h * costoAguaSalobre;
-  const total = cEsm + cSvc + cMaq + cEnergia + cVapor + cAguaOsmo + cAguaSalobre + costoOtros;
+  const total = cMaq + costoOtros;
   const costoPorKgSal = act.psal > 0 ? total / act.psal : 0;
   const costoPorKgIng = act.ping > 0 ? total / act.ping : 0;
 
-  const c = {
-    costoEsm, costoSvc, costoMaq, costoOtros, cEsm, cSvc, cMaq,
-    costoEnergia, cEnergia,
-    costoVapor, cVapor,
-    costoAguaOsmo, cAguaOsmo,
-    costoAguaSalobre, cAguaSalobre,
-  };
+  const c = { costoMaq, costoOtros, cMaq };
   document.getElementById('cr-breakdown').innerHTML = _renderBreakdownRows(c, act);
   document.getElementById('cr-total').textContent = fmt(total);
   document.getElementById('cr-sub').textContent = 'Calculado automáticamente';
@@ -260,12 +176,8 @@ export async function guardarCosto(id) {
   if (btn) btn.disabled = true;
   const { error } = await supabase.from('costos').upsert({
     actividad_codigo: id,
-    costo_esm: c.costoEsm, costo_svc: c.costoSvc, costo_maq: c.costoMaq, costo_otros: c.costoOtros,
-    c_esm: c.cEsm, c_svc: c.cSvc, c_maq: c.cMaq,
-    consumo_energia_kwh: 0, costo_energia_kwh: c.costoEnergia, c_energia: c.cEnergia,
-    consumo_vapor_m3: 0, costo_vapor_m3: c.costoVapor, c_vapor: c.cVapor,
-    consumo_agua_osmo_m3: 0, costo_agua_osmo_m3: c.costoAguaOsmo, c_agua_osmo: c.cAguaOsmo,
-    consumo_agua_salobre_m3: 0, costo_agua_salobre_m3: c.costoAguaSalobre, c_agua_salobre: c.cAguaSalobre,
+    costo_maq: c.costoMaq, costo_otros: c.costoOtros,
+    c_maq: c.cMaq,
     total: c.total, costo_por_kg_sal: c.costoPorKgSal, costo_por_kg_ing: c.costoPorKgIng,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'actividad_codigo' });
@@ -281,15 +193,13 @@ export function refreshIfSelected(id) {
 
 export function updateCostosSummary(dayData = actividadesDB.filter(a => a.fecha === viewDate.current)) {
   const vals = dayData.map(a => costosDB[a.id]).filter(Boolean);
-  const totEsm = vals.reduce((s, c) => s + (c.cEsm || 0), 0);
-  const totSvc = vals.reduce((s, c) => s + (c.cSvc || 0), 0);
   const totMaq = vals.reduce((s, c) => s + (c.cMaq || 0), 0);
-  const totServicios = vals.reduce((s, c) => s + (c.cEnergia || 0) + (c.cVapor || 0) + (c.cAguaOsmo || 0) + (c.cAguaSalobre || 0), 0);
+  const totOtros = vals.reduce((s, c) => s + (c.costoOtros || 0), 0);
   const grand = vals.reduce((s, c) => s + (c.total || 0), 0);
-  const el = document.getElementById('sum-mo');
+  const el = document.getElementById('sum-maq');
   if (el) {
-    el.textContent = fmtN(totEsm + totSvc);
-    document.getElementById('sum-maq').textContent = fmtN(totMaq + totServicios);
+    el.textContent = fmtN(totMaq);
+    document.getElementById('sum-otros').textContent = fmtN(totOtros);
     document.getElementById('sum-total').textContent = fmtN(grand);
   }
 }

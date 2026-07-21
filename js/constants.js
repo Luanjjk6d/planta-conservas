@@ -8,3 +8,7 @@ export const sugerencias = {
   'CORTADO DE POTA': 'MANUAL',
   'ENVASADO': 'BANDA TRANSPORTADORA',
 };
+
+// Costos fijos del día (declarados por el usuario, no editables desde la UI).
+export const COSTO_CANASTILLA = 1.30;
+export const COSTO_COMBUSTIBLE_DIA = 500;
