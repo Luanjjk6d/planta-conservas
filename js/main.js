@@ -1,9 +1,10 @@
 import { supabase } from './supabaseClient.js';
-import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, numerosParteDB } from './state.js';
+import { m1Data, actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, numerosParteDB, equiposDB } from './state.js';
 import { hn, toast, showPage } from './utils.js';
 import { fetchLookups, populateLookupSelect } from './lookups.js';
 import { openModal, closeModal, confirmModal, initModal } from './modal.js';
 import { openManageModal, closeManageModal, deleteManageItem } from './catalogManage.js';
+import { fetchEquipos, openCostoEquipoModal, closeCostoEquipoModal, confirmCostoEquipoModal } from './equipoCosto.js';
 import { guarM1, limpM1, rendM1, mapLote, fetchNumerosParte, rendNumerosParte, cerrarNumeroParte, eliminarNumeroParte, eliminarLote, openNpModal, closeNpModal, confirmNpModal } from './m1.js';
 import {
   guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
@@ -20,7 +21,7 @@ import { abrirDetalleNP, volverAProduccion, actualizarDetalleNP } from './npDeta
 // porque los módulos ES no las exponen globalmente por defecto.
 Object.assign(window, {
   showPage, openModal, closeModal, confirmModal,
-  openManageModal, closeManageModal, deleteManageItem,
+  openManageModal, closeManageModal, deleteManageItem, openCostoEquipoModal, closeCostoEquipoModal, confirmCostoEquipoModal,
   guarM1, limpM1, cerrarNumeroParte, eliminarNumeroParte, eliminarLote, openNpModal, closeNpModal, confirmNpModal,
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog,
@@ -52,7 +53,7 @@ initModal();
 initM2Listeners();
 
 async function initApp() {
-  const [lotesRes, actRes, costosRes, plogRes, lookups, empleados, , numerosParte] = await Promise.all([
+  const [lotesRes, actRes, costosRes, plogRes, lookups, empleados, , numerosParte, equipos] = await Promise.all([
     supabase.from('lotes').select('*').order('created_at', { ascending: false }),
     supabase.from('actividades').select('*').order('created_at', { ascending: false }),
     supabase.from('costos').select('*'),
@@ -61,6 +62,7 @@ async function initApp() {
     fetchEmpleados(),
     fetchActividadEmpleados(),
     fetchNumerosParte(),
+    fetchEquipos(),
   ]);
 
   const firstError = [lotesRes, actRes, costosRes, plogRes].find(r => r.error);
@@ -76,10 +78,11 @@ async function initApp() {
   plogRes.data.map(mapPersonalLog).forEach(p => { (personalLogDB[p.actId] ||= []).push(p); });
   empleadosEsmeraldaDB.push(...empleados);
   numerosParteDB.push(...numerosParte);
+  equiposDB.push(...equipos);
 
   populateLookupSelect('m1-prod', lookups.productos);
   populateLookupSelect('m2-proc', lookups.procesos);
-  populateLookupSelect('m2-equipo', lookups.equipos);
+  populateLookupSelect('m2-equipo', equiposDB);
   populateLookupSelect('m1-np', lookups.numerosParte);
   populateLookupSelect('m2-np', lookups.numerosParte);
   populateLookupSelect('np-cliente', lookups.clientes);

@@ -11,15 +11,14 @@ export const TABLE_BY_SELECT = {
 };
 
 export async function fetchLookups() {
-  const [prodRes, procRes, eqRes, npRes, cliRes] = await Promise.all([
+  const [prodRes, procRes, npRes, cliRes] = await Promise.all([
     supabase.from('productos').select('nombre').order('nombre'),
     supabase.from('procesos').select('nombre').order('nombre'),
-    supabase.from('equipos').select('nombre').order('nombre'),
     supabase.from('numeros_parte').select('nombre').eq('estado', 'abierto').order('nombre'),
     supabase.from('clientes').select('nombre').order('nombre'),
   ]);
   return {
-    productos: prodRes.data || [], procesos: procRes.data || [], equipos: eqRes.data || [],
+    productos: prodRes.data || [], procesos: procRes.data || [],
     numerosParte: npRes.data || [], clientes: cliRes.data || [],
   };
 }
@@ -35,5 +34,5 @@ export function populateLookupSelect(selectId, rows) {
 }
 
 export async function insertLookupValue(table, nombre) {
-  return supabase.from(table).insert({ nombre });
+  return supabase.from(table).insert({ nombre }).select().single();
 }

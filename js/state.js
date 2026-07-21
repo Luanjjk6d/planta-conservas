@@ -9,3 +9,4 @@ export const empleadosEsmeraldaDB = [];  // catálogo: [{id,nombre,genero,costoH
 export const actividadEmpleadosDB = {};  // { codigo_actividad: [{id,nombre,genero,costoHora}, ...] } (tabla: actividad_esmeralda_empleados)
 export const numerosParteDB = [];  // [{id,nombre,estado,fechaApertura,fechaCierre}, ...] (tabla: numeros_parte)
 export const proyectosDB = [];     // carga perezosa — solo se llena al abrir la pestaña Proyectos (tabla: proyectos)
+export const equiposDB = [];       // [{id,nombre,costoHora}, ...] (tabla: equipos) — costo predeterminado para Módulo 3

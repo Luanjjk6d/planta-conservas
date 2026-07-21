@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { actividadesDB, costosDB, actividadEmpleadosDB } from './state.js';
+import { actividadesDB, costosDB, actividadEmpleadosDB, equiposDB } from './state.js';
 import { esc, fmt, fmtN, mHM, toast } from './utils.js';
 import { stL } from './constants.js';
 import { rendM2 } from './m2.js';
@@ -68,6 +68,7 @@ export function selectActividad(id) {
   const act = actividadesDB.find(a => a.id === id);
   if (!act) return;
   const prev = costosDB[id] || {};
+  const equipoPred = equiposDB.find(e => e.nombre === act.equipo && e.costoHora > 0);
   const panel = document.getElementById('m3-detail-panel');
   panel.innerHTML = `
     <div class="costo-detail">
@@ -117,8 +118,8 @@ export function selectActividad(id) {
           </div>
           <div class="cd-input-row">
             <label>S/. Costo de máquina / hora</label>
-            <input type="number" id="ci-maq" value="${prev.costoMaq || ''}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
-            <span style="font-size:10px;color:var(--muted);margin-top:2px">Equipo: ${esc(act.equipo)} × ${act.durHoras.toFixed(2)} h</span>
+            <input type="number" id="ci-maq" value="${prev.costoMaq ?? (equipoPred ? equipoPred.costoHora : '')}" placeholder="0.00" min="0" step="0.01" oninput="calcCostoDetalle('${id}')">
+            <span style="font-size:10px;color:var(--muted);margin-top:2px">Equipo: ${esc(act.equipo)} × ${act.durHoras.toFixed(2)} h${equipoPred ? ' · predeterminado' : ''}</span>
           </div>
           <div class="cd-input-row">
             <label>S/. Energía eléctrica / hora</label>
@@ -167,7 +168,7 @@ export function selectActividad(id) {
         <button class="btn-p" id="m3-save-btn" onclick="guardarCosto('${id}')">Guardar costos →</button>
       </div>
     </div>`;
-  if (prev.costoEsm || prev.costoSvc || prev.costoMaq || prev.cEnergia || prev.cVapor || prev.cAguaOsmo || prev.cAguaSalobre || (actividadEmpleadosDB[id] || []).length) calcCostoDetalle(id);
+  if (prev.costoEsm || prev.costoSvc || prev.costoMaq || prev.cEnergia || prev.cVapor || prev.cAguaOsmo || prev.cAguaSalobre || (actividadEmpleadosDB[id] || []).length || equipoPred?.costoHora) calcCostoDetalle(id);
 }
 
 function _renderEsmeraldaList(id) {

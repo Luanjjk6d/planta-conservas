@@ -1,5 +1,6 @@
 import { toast } from './utils.js';
 import { TABLE_BY_SELECT, insertLookupValue } from './lookups.js';
+import { equiposDB } from './state.js';
 
 let modalSelId = null;
 
@@ -24,10 +25,13 @@ export async function confirmModal() {
   if (Array.from(sel.options).some(o => o.value === val)) { toast('Ya existe ese item.'); return; }
 
   const table = TABLE_BY_SELECT[modalSelId];
-  const { error } = await insertLookupValue(table, val);
+  const { data, error } = await insertLookupValue(table, val);
   if (error) {
     toast(error.code === '23505' ? 'Ya existe ese item.' : 'Error al agregar: ' + error.message, true);
     return;
+  }
+  if (table === 'equipos' && data) {
+    equiposDB.push({ id: data.id, nombre: data.nombre, costoHora: parseFloat(data.costo_hora) || 0 });
   }
 
   const o = document.createElement('option');

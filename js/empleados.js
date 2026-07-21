@@ -33,7 +33,7 @@ export function renderEmpleadoChecklist(selectedIds = []) {
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
         <input type="checkbox" class="m2-esm-emp-cb" value="${emp.id}" ${selectedIds.includes(emp.id) ? 'checked' : ''}>
-        ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero} · S/.${emp.costoHora.toFixed(2)}/h)</span>
+        ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero})</span>
       </label>
       <button class="link-del" onclick="eliminarEmpleado(${emp.id})">Eliminar</button>
     </div>`).join('');
