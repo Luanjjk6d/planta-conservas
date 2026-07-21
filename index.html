@@ -339,7 +339,13 @@
 <!-- ═══════════ DETALLE DE PRODUCCIÓN POR NP ═══════════ -->
 <div id="page-np-detail" class="page">
   <div class="dash">
-    <a href="#" onclick="volverAProduccion();return false;" class="npd-back">‹ Volver al Dashboard</a>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <a href="#" onclick="volverAProduccion();return false;" class="npd-back">‹ Volver al Dashboard</a>
+      <button class="btn-refresh" onclick="actualizarDetalleNP()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.12-3.9"/></svg>
+        Actualizar
+      </button>
+    </div>
 
     <div class="npd-header">
       <div class="npd-title-row">
@@ -349,6 +355,9 @@
       <div class="npd-cliente" id="npd-cliente"></div>
       <div class="npd-fechas" id="npd-fechas"></div>
     </div>
+
+    <p class="stitle">Línea de producción</p>
+    <div class="npd-linea" id="npd-linea"></div>
 
     <div class="kpi-grid">
       <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="npd-mp">0</div><div class="kpi-s">kg recepcionados</div></div>

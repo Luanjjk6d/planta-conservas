@@ -227,6 +227,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .npd-op-group{margin-bottom:14px}
 .npd-op-group:last-child{margin-bottom:0}
 .npd-op-title{font-size:12px;font-weight:600;color:var(--b600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.npd-linea{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:2px 2px 12px;margin-bottom:1.25rem}
+.npd-linea-arrow{display:flex;align-items:center;padding:0 8px;color:var(--g400);font-size:18px;flex-shrink:0}
+.npd-station{flex-shrink:0;min-width:160px;border-radius:var(--rlg);padding:12px 14px;border:1.5px solid var(--g200);background:var(--white);box-shadow:var(--sh-sm)}
+.npd-station-op{border-color:var(--green);background:var(--green-bg)}
+.npd-station-det{border-color:var(--orange);background:var(--orange-bg)}
+.npd-station-fin{border-color:var(--b200);background:var(--b50)}
+.npd-station-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;color:var(--muted)}
+.npd-station-op .npd-station-badge{color:var(--green)}
+.npd-station-det .npd-station-badge{color:var(--orange)}
+.npd-station-fin .npd-station-badge{color:var(--b600)}
+.npd-station-proc{font-size:13px;font-weight:700;color:var(--b900);margin-bottom:4px}
+.npd-station-meta{font-size:11px;color:var(--muted)}
+.npd-station-personal{font-size:11px;color:var(--text);margin-top:4px;font-weight:500}
+.npd-station-count{font-size:10px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(4,44,83,.08)}
 
 /* ── DASHBOARD: producción por número de parte ── */
 .np-prod-row{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);margin-bottom:8px;overflow:hidden;box-shadow:var(--sh-sm)}

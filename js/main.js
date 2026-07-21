@@ -14,7 +14,7 @@ import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, render
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 import { fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto } from './proyectos.js';
-import { abrirDetalleNP, volverAProduccion } from './npDetalle.js';
+import { abrirDetalleNP, volverAProduccion, actualizarDetalleNP } from './npDetalle.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -27,7 +27,7 @@ Object.assign(window, {
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado,
   renderM3, selectActividad, calcCostoDetalle, guardarCosto,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP,
-  abrirDetalleNP, volverAProduccion,
+  abrirDetalleNP, volverAProduccion, actualizarDetalleNP,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,
   fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto,
 });
