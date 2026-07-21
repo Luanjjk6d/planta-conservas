@@ -44,6 +44,7 @@ export async function renderDash(dateStr = currentDashDate) {
   currentDashDate = dateStr;
   dashLotes = result.lotes; dashAct = result.act; dashCostos = result.costos;
   updateDateNav();
+  _renderLineaProduccionDia();
 
   const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
   const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);
@@ -146,6 +147,27 @@ export async function renderDash(dateStr = currentDashDate) {
   document.getElementById('d-updated').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
 
   await renderTrendChart();
+}
+
+// Línea de producción del día — una estación por CADA actividad del día
+// (no agrupada por proceso, a diferencia de otras vistas) para que se vea
+// todo lo que pasó, en orden. Puede haber actividades de más de un NP el
+// mismo día — por eso cada estación aclara a cuál pertenece.
+function _renderLineaProduccionDia() {
+  const el = document.getElementById('d-linea');
+  if (!el) return;
+  if (!dashAct.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día.</div>'; return; }
+  const ordenado = dashAct.slice().sort((a, b) => tMin(a.ini) - tMin(b.ini));
+  el.innerHTML = ordenado.map((a, i) => `
+    ${i > 0 ? '<div class="npd-linea-arrow">→</div>' : ''}
+    <div class="npd-station npd-station-${a.estado}">
+      <div class="npd-station-badge">${stL[a.estado]}</div>
+      <div class="npd-station-proc">${esc(a.proc)}</div>
+      <div class="npd-station-meta">${a.np ? 'NP ' + esc(a.np) : 'Sin NP'}${a.batch ? ' · Batch ' + esc(a.batch) : ''}</div>
+      <div class="npd-station-meta">${a.ini}${a.fin !== '—' ? ' → ' + a.fin : ''}</div>
+      <div class="npd-station-personal">${a.totalPersonal} persona${a.totalPersonal !== 1 ? 's' : ''}</div>
+      <div class="npd-station-count">${a.ping || a.psal ? a.ping + ' kg → ' + a.psal + ' kg' : 'Sin peso registrado'}</div>
+    </div>`).join('');
 }
 
 function renderTimeline() {

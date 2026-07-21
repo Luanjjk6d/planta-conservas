@@ -66,11 +66,19 @@ export function limpM1() {
 
 export function rendM1() {
   const el = document.getElementById('list-m1');
-  const dayData = m1Data.filter(r => r.fecha === viewDate.current);
+  // Un registro se ve el día que se cargó, pero también en los días
+  // siguientes mientras su NP siga abierto — así la info de materia
+  // prima queda visible durante toda la producción, no solo el día 1.
+  const dayData = m1Data.filter(r => {
+    if (r.fecha === viewDate.current) return true;
+    if (r.fecha > viewDate.current) return false;
+    const np = numerosParteDB.find(n => n.nombre === r.np);
+    return !!(np && np.estado === 'abierto');
+  });
   if (!dayData.length) { el.innerHTML = '<div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>Sin registros este día.</div>'; return; }
   el.innerHTML = dayData.map((r, i) => `<div class="card">
     <div class="card-head">
-      <div><div class="card-title">${esc(r.sup)}</div><div class="card-meta">${fF(r.fecha)} · ${r.hora}${r.turno ? ' · ' + r.turno.split(' ')[0] : ''}</div></div>
+      <div><div class="card-title">${esc(r.sup)}</div><div class="card-meta">${fF(r.fecha)} · ${r.hora}${r.turno ? ' · ' + r.turno.split(' ')[0] : ''}${r.fecha !== viewDate.current ? ' · <span style="color:var(--b600);font-weight:600">NP abierto</span>' : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <span class="card-num">#${dayData.length - i}</span>
         <button class="link-del" onclick="eliminarLote(${r.id})">Eliminar</button>

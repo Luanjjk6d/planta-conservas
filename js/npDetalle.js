@@ -82,39 +82,10 @@ function renderDetalleNP() {
   document.getElementById('npd-cajas').textContent = cajas;
   document.getElementById('npd-costo').textContent = fmt(costo);
 
-  _renderLineaProduccion(acts);
   _renderRendimientoPorOperacion(acts);
   _renderCajasPorDia(acts);
   _renderTiempoPorProceso(acts);
   _renderTimeline(acts);
-}
-
-// Línea de producción — una "estación" por proceso distinto que haya
-// pasado por este NP, en el orden real en que empezaron (no un orden fijo,
-// porque no todos los NP siguen la misma secuencia). Cada estación
-// muestra el estado de su registro más reciente — así se ve de un
-// vistazo en qué anda cada proceso ahora mismo.
-function _renderLineaProduccion(acts) {
-  const el = document.getElementById('npd-linea');
-  if (!acts.length) { el.innerHTML = '<div class="dc-empty">Sin actividades registradas todavía.</div>'; return; }
-
-  const porProc = {};
-  acts.forEach(a => { (porProc[a.proc] ||= []).push(a); });
-  const estaciones = Object.keys(porProc).map(proc => {
-    const list = porProc[proc].slice().sort((a, b) => (a.fecha + a.ini).localeCompare(b.fecha + b.ini));
-    return { proc, ultima: list[list.length - 1], primera: list[0], nCorridas: list.length };
-  }).sort((a, b) => (a.primera.fecha + a.primera.ini).localeCompare(b.primera.fecha + b.primera.ini));
-
-  el.innerHTML = estaciones.map((e, i) => `
-    ${i > 0 ? '<div class="npd-linea-arrow">→</div>' : ''}
-    <div class="npd-station npd-station-${e.ultima.estado}">
-      <div class="npd-station-badge">${stL[e.ultima.estado]}</div>
-      <div class="npd-station-proc">${esc(e.proc)}</div>
-      <div class="npd-station-meta">${e.ultima.batch ? 'Batch ' + esc(e.ultima.batch) : 'Sin batch'}</div>
-      <div class="npd-station-meta">${fF(e.ultima.fecha)} · ${e.ultima.ini}${e.ultima.fin !== '—' ? ' → ' + e.ultima.fin : ''}</div>
-      <div class="npd-station-personal">${e.ultima.totalPersonal} persona${e.ultima.totalPersonal !== 1 ? 's' : ''}</div>
-      <div class="npd-station-count">${e.nCorridas} registro${e.nCorridas !== 1 ? 's' : ''} en total</div>
-    </div>`).join('');
 }
 
 function _renderRendimientoPorOperacion(acts) {
