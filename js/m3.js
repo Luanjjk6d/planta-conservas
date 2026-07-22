@@ -8,6 +8,11 @@ import { cargarCostosDia, cargarPersonalDia, renderResumenCostosDia } from './co
 
 let selectedActId = null;
 
+export function toggleCostosDiaSection() {
+  document.getElementById('m3-costos-dia-hdr').classList.toggle('collapsed');
+  document.getElementById('m3-costos-dia-body').classList.toggle('collapsed');
+}
+
 export function mapCosto(row) {
   return {
     costoMaq: parseFloat(row.costo_maq) || 0,
@@ -55,6 +60,7 @@ export function selectActividad(id) {
   renderM3();
   const act = actividadesDB.find(a => a.id === id);
   if (!act) return;
+  const costed = !!costosDB[id];
   const prev = costosDB[id] || {};
   const equipoPred = equiposDB.find(e => e.nombre === act.equipo && e.costoHora > 0);
   const panel = document.getElementById('m3-detail-panel');
@@ -64,6 +70,8 @@ export function selectActividad(id) {
         <div><div style="font-size:12px;color:var(--muted);margin-bottom:2px">ID: ${act.id}</div>${esc(act.proc)} — ${esc(act.equipo)}</div>
         <span class="sbadge ${act.estado}">${stL[act.estado]}</span>
       </div>
+
+      ${costed ? `<div class="chart-target-row"><span class="chart-target-label">Editando costo ya guardado de ${act.id} — cambia los valores y vuelve a guardar.</span></div>` : ''}
 
       <!-- DATOS OPERATIVOS (solo lectura) -->
       <div class="cd-section">
@@ -127,7 +135,7 @@ export function selectActividad(id) {
       </div>
 
       <div class="bgrp">
-        <button class="btn-p" id="m3-save-btn" onclick="guardarCosto('${id}')">Guardar costos →</button>
+        <button class="btn-p" id="m3-save-btn" onclick="guardarCosto('${id}')">${costed ? 'Actualizar costos →' : 'Guardar costos →'}</button>
       </div>
     </div>`;
   if (prev.costoMaq || prev.costoOtros || equipoPred?.costoHora) calcCostoDetalle(id);
