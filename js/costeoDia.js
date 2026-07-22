@@ -41,11 +41,16 @@ function _renderPersonalDiaForm() {
     el.innerHTML = !empleadosEsmeraldaDB.length
       ? '<div style="font-size:12px;color:var(--muted)">Sin empleados registrados.</div>'
       : empleadosEsmeraldaDB.map(emp => `
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="checkbox" class="pd-esm-cb" value="${emp.id}" ${pdEmpleadoIds.includes(emp.id) ? 'checked' : ''} onchange="calcularPersonalDia()">
-          ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero})</span>
-        </label>`).join('');
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="pd-esm-cb" value="${emp.id}" ${pdEmpleadoIds.includes(emp.id) ? 'checked' : ''} onchange="calcularPersonalDia()">
+            ${esc(emp.nombre)} <span style="color:var(--muted);font-size:11px">(${emp.genero})</span>
+          </label>
+          <button class="link-edit" onclick="openCostoEmpleadoModal(${emp.id})">Editar</button>
+        </div>`).join('');
   }
+  const allCb = document.getElementById('pd-esm-all');
+  if (allCb) allCb.checked = empleadosEsmeraldaDB.length > 0 && pdEmpleadoIds.length === empleadosEsmeraldaDB.length;
   const svcH = document.getElementById('pd-svc-h');
   if (!svcH) return;
   svcH.value = pdData?.svcH || '';
@@ -57,6 +62,11 @@ function _renderPersonalDiaForm() {
 
 function _getSelectedEsmIds() {
   return Array.from(document.querySelectorAll('.pd-esm-cb:checked')).map(cb => parseInt(cb.value));
+}
+
+export function toggleTodosPersonalDia(checked) {
+  document.querySelectorAll('.pd-esm-cb').forEach(cb => { cb.checked = checked; });
+  calcularPersonalDia();
 }
 
 export function calcularPersonalDia() {

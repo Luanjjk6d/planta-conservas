@@ -290,7 +290,13 @@
       <div class="divider"></div>
       <p class="stitle">Personal del día</p>
       <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Se declara una vez por día — no por actividad.</p>
-      <div class="subgroup-title">Personal Esmeralda (participaron hoy)</div>
+      <div class="subgroup-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+        <span>Personal Esmeralda (participaron hoy)</span>
+        <button class="btn-add" style="width:26px;height:26px;font-size:15px" onclick="openEmpleadoModal()" title="Agregar empleado">+</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin:.4rem 0">
+        <input type="checkbox" id="pd-esm-all" onchange="toggleTodosPersonalDia(this.checked)" style="width:auto"> Marcar a todos
+      </label>
       <div id="pd-esm-list" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white);margin-bottom:.75rem"></div>
 
       <div class="subgroup-title">Personal Service</div>

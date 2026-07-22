@@ -53,6 +53,7 @@ export async function eliminarEmpleado(id) {
     actividadEmpleadosDB[actId] = actividadEmpleadosDB[actId].filter(e => e.id !== id);
   });
   renderEmpleadoChecklist(getSelectedEmpleadoIds());
+  refrescarChecklistPersonalDia();
   rendM2();
   toast(`"${emp?.nombre}" eliminado`);
 }
@@ -118,6 +119,7 @@ export async function confirmEmpleadoModal() {
 
   empleadosEsmeraldaDB.push(mapEmpleado(data));
   renderEmpleadoChecklist(getSelectedEmpleadoIds());
+  refrescarChecklistPersonalDia();
   closeEmpleadoModal();
   toast('"' + nombre + '" agregado');
 }

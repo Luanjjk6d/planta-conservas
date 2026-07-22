@@ -68,6 +68,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .btn-x:hover{background:#FEF2F2;color:#DC2626;border-color:#FCA5A5}
 .link-del{font-size:11px;color:var(--muted);font-weight:500;cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
 .link-del:hover{color:#DC2626}
+.link-edit{font-size:11px;color:var(--b600);font-weight:500;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;flex-shrink:0}
+.link-edit:hover{color:var(--b800);text-decoration:underline}
 .manage-list{max-height:320px;overflow-y:auto;margin:.75rem 0}
 
 /* ── BUTTONS ── */
