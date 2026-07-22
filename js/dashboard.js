@@ -3,13 +3,12 @@ import { esc, fmt, fF, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } fr
 import { stL } from './constants.js';
 import { mapLote } from './m1.js';
 import { mapActividad } from './m2.js';
-import { mapCosto } from './m3.js';
-import { m1Data, actividadesDB, costosDB, numerosParteDB } from './state.js';
-import { renderResumenCostosDia } from './costeoDia.js';
+import { m1Data, actividadesDB, costosDB, numerosParteDB, equiposDB } from './state.js';
+import { renderResumenCostosDia, costoMaquinaActividad } from './costeoDia.js';
 
 let chartTrend = null;
 let currentDashDate = localDateStr();
-let dashLotes = [], dashAct = [], dashCostos = {};
+let dashLotes = [], dashAct = [];
 let produccionNP = [];
 
 async function fetchDashboardData(dateStr) {
@@ -20,12 +19,7 @@ async function fetchDashboardData(dateStr) {
   if (lotesRes.error || actRes.error) { toast('Error al cargar el dashboard.', true); return null; }
   const lotes = lotesRes.data.map(mapLote);
   const act = actRes.data.map(mapActividad);
-  let costos = {};
-  if (act.length) {
-    const { data, error } = await supabase.from('costos').select('*').in('actividad_codigo', act.map(a => a.id));
-    if (!error) costos = Object.fromEntries(data.map(c => [c.actividad_codigo, mapCosto(c)]));
-  }
-  return { lotes, act, costos };
+  return { lotes, act };
 }
 
 function updateDateNav() {
@@ -43,23 +37,27 @@ export async function renderDash(dateStr = currentDashDate) {
   const result = await fetchDashboardData(dateStr);
   if (!result) return;
   currentDashDate = dateStr;
-  dashLotes = result.lotes; dashAct = result.act; dashCostos = result.costos;
+  dashLotes = result.lotes; dashAct = result.act;
   updateDateNav();
   _renderLineaProduccionDia();
-  renderResumenCostosDia(dateStr);
+  const resumenDia = await renderResumenCostosDia(dateStr);
 
   const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
   const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);
-  const totCosto = Object.values(dashCostos).reduce((s, c) => s + (c.total || 0), 0);
   document.getElementById('d-mp').textContent = totMP.toFixed(1);
   document.getElementById('d-merma').textContent = totMerma.toFixed(1);
-  document.getElementById('d-costo').textContent = fmt(totCosto);
+  document.getElementById('d-costo').textContent = fmt(resumenDia?.total || 0);
 
-  // Último lote del día
+  // Último lote — sigue al NP que se trabaja ese día, sin exigir que el lote
+  // se haya registrado ese mismo día: un NP puede tardar varios días en
+  // cerrarse y seguir usando el lote con el que abrió (m1Data trae TODOS los
+  // lotes, no solo los del día, y ya viene ordenado del más reciente).
   const lb = document.getElementById('d-lote-body'), lbadge = document.getElementById('d-lote-badge');
-  if (!dashLotes.length) { lb.innerHTML = '<div class="dc-empty">Sin datos</div>'; lbadge.textContent = '—'; }
+  const npDelDia = dashAct[0]?.np;
+  const r = (npDelDia && m1Data.find(l => l.np === npDelDia)) || dashLotes[0];
+  if (!r) { lb.innerHTML = '<div class="dc-empty">Sin datos</div>'; lbadge.textContent = '—'; }
   else {
-    const r = dashLotes[0]; lbadge.textContent = r.np;
+    lbadge.textContent = r.np;
     lb.innerHTML = `<div class="di-row"><span class="di-l">N° parte</span><span class="di-v" style="font-family:'DM Mono',monospace">${esc(r.np)}</span></div>
     <div class="di-row"><span class="di-l">Producto</span><span class="di-v">${esc(r.prod)}</span></div>
     <div class="di-row"><span class="di-l">Especie</span><span class="di-v">${esc(r.especie) || '—'}</span></div>
@@ -82,27 +80,19 @@ export async function renderDash(dateStr = currentDashDate) {
     <div style="margin-top:10px;background:var(--g100);border-radius:999px;height:9px;overflow:hidden"><div style="height:100%;width:${p}%;background:linear-gradient(90deg,var(--b400),var(--b600));border-radius:999px"></div></div>`;
   }
 
-  // Actividades costeadas
-  const costeadas = Object.keys(dashCostos).length;
-  document.getElementById('d-cost-badge').textContent = `${costeadas}/${dashAct.length}`;
+  // Costo de máquina por actividad — automático (horas × tarifa del equipo).
+  // El badge cuenta actividades con tarifa configurada, no "costeadas a mano"
+  // (ese paso manual ya no existe).
+  const conTarifa = dashAct.filter(a => equiposDB.some(e => e.nombre === a.equipo && e.costoHora > 0));
+  document.getElementById('d-cost-badge').textContent = `${conTarifa.length}/${dashAct.length}`;
   const cb = document.getElementById('d-cost-body');
   if (!dashAct.length) { cb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    const vals = Object.values(dashCostos);
-    const totEsm = vals.reduce((s, c) => s + (c.cEsm || 0), 0);
-    const totSvc = vals.reduce((s, c) => s + (c.cSvc || 0), 0);
-    const totMaq = vals.reduce((s, c) => s + (c.cMaq || 0), 0);
-    const totAVE = vals.reduce((s, c) => s + (c.cAVE || 0), 0);
-    const totOtros = vals.reduce((s, c) => s + (c.costoOtros || 0), 0);
-    const grand = vals.reduce((s, c) => s + (c.total || 0), 0);
-    cb.innerHTML = `
-      <div class="di-row"><span class="di-l">Personal Esmeralda</span><span class="di-v">${fmt(totEsm)}</span></div>
-      <div class="di-row"><span class="di-l">Personal Service</span><span class="di-v">${fmt(totSvc)}</span></div>
-      <div class="di-row"><span class="di-l">Máquinas / Equipos</span><span class="di-v">${fmt(totMaq)}</span></div>
-      <div class="di-row"><span class="di-l">Agua, vapor y elect.</span><span class="di-v">${fmt(totAVE)}</span></div>
-      <div class="di-row"><span class="di-l">Otros costos</span><span class="di-v">${fmt(totOtros)}</span></div>
-      <div class="di-row" style="border-top:2px solid var(--b100);margin-top:4px;padding-top:8px"><span class="di-l" style="font-weight:600;color:var(--b800)">TOTAL</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b600)">${fmt(grand)}</span></div>
-      ${dashAct.map(a => { const c = dashCostos[a.id]; return `<div class="di-row"><span class="di-l" style="font-size:11px">${esc(a.proc)}</span><span class="di-v" style="font-size:11px">${c ? fmt(c.total) : '<span style="color:var(--orange)">Sin costear</span>'}</span></div>`; }).join('')}`;
+    cb.innerHTML = dashAct.map(a => {
+      const eq = equiposDB.find(e => e.nombre === a.equipo);
+      const sinTarifa = !eq || !eq.costoHora;
+      return `<div class="di-row"><span class="di-l" style="font-size:11px">${esc(a.proc)}${a.batch ? ' · ' + esc(a.batch) : ''}</span><span class="di-v" style="font-size:11px${sinTarifa ? ';color:var(--orange)' : ''}">${sinTarifa ? 'Sin tarifa de equipo' : fmt(costoMaquinaActividad(a))}</span></div>`;
+    }).join('');
   }
 
   // Resumen del día
@@ -248,7 +238,9 @@ function _calcularProduccionPorNP() {
     const actN = actividadesDB.filter(a => a.np === n.nombre);
     const mp = lotesN.reduce((s, l) => s + (l.peso || 0), 0);
     const merma = actN.reduce((s, a) => s + (a.merma || 0), 0);
-    const costo = actN.reduce((s, a) => s + (costosDB[a.id]?.total || 0), 0);
+    // Solo costo de máquina de las actividades de este NP — los costos del
+    // día (personal, canastillas, combustible) no se prorratean por NP.
+    const costo = actN.reduce((s, a) => s + costoMaquinaActividad(a) + (costosDB[a.id]?.total || 0), 0);
     return {
       nombre: n.nombre, cliente: n.cliente || '', estado: n.estado,
       fechaApertura: n.fechaApertura, fechaCierre: n.fechaCierre,
@@ -276,7 +268,7 @@ export function renderProduccionPorNP() {
         </div>
         <div class="np-prod-stat"><div class="np-prod-stat-v">${n.mp.toFixed(0)} kg</div><div class="np-prod-stat-l">Mat. prima</div></div>
         <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--orange)">${n.merma.toFixed(0)} kg</div><div class="np-prod-stat-l">Merma</div></div>
-        <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--b600)">${fmt(n.costo)}</div><div class="np-prod-stat-l">Costo total</div></div>
+        <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--b600)">${fmt(n.costo)}</div><div class="np-prod-stat-l">Costo máquina</div></div>
         <span class="np-prod-chev">→</span>
       </div>
     </div>`;

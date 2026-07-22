@@ -5,9 +5,17 @@
 // por caja), juntando personal + canastillas + combustible + el costo de
 // máquina de las actividades de ese día.
 import { supabase } from './supabaseClient.js';
-import { empleadosEsmeraldaDB } from './state.js';
+import { empleadosEsmeraldaDB, actividadesDB, equiposDB, costosDB } from './state.js';
 import { esc, toast, fmt } from './utils.js';
 import { COSTO_CANASTILLA, COSTO_COMBUSTIBLE_DIA } from './constants.js';
+
+// Costo de máquina de una actividad = horas trabajadas × tarifa del equipo
+// (configurada una vez por equipo en Módulo 2). Se calcula solo, sin que el
+// usuario tenga que "costear" cada actividad a mano.
+export function costoMaquinaActividad(act) {
+  const eq = equiposDB.find(e => e.nombre === act.equipo);
+  return eq ? eq.costoHora * act.durHoras : 0;
+}
 
 // ───────── PERSONAL DEL DÍA (Módulo 3) ─────────
 let pdFecha = null;
@@ -121,7 +129,7 @@ export function refrescarChecklistPersonalDia() {
 let cdFecha = null;
 
 function mapCostosDia(row) {
-  return { fecha: row.fecha, canastillas: row.cantidad_canastillas, combustible: row.combustible };
+  return { fecha: row.fecha, canastillas: row.cantidad_canastillas, combustible: row.combustible, otrosCostos: parseFloat(row.otros_costos) || 0 };
 }
 
 export async function cargarCostosDia(fecha) {
@@ -132,28 +140,31 @@ export async function cargarCostosDia(fecha) {
   if (!inputCant) return;
   inputCant.value = cd?.canastillas || '';
   document.getElementById('cd-combustible').checked = !!cd?.combustible;
+  document.getElementById('cd-otros').value = cd?.otrosCostos || '';
   calcularCostosDia();
 }
 
 export function calcularCostosDia() {
   const cant = parseInt(document.getElementById('cd-canastillas').value) || 0;
   const combustible = document.getElementById('cd-combustible').checked;
+  const otros = parseFloat(document.getElementById('cd-otros').value) || 0;
   const montoCanastillas = cant * COSTO_CANASTILLA;
   const montoCombustible = combustible ? COSTO_COMBUSTIBLE_DIA : 0;
-  const total = montoCanastillas + montoCombustible;
+  const total = montoCanastillas + montoCombustible + otros;
   const el = document.getElementById('cd-total');
   if (el) el.textContent = fmt(total);
-  return { montoCanastillas, montoCombustible, total };
+  return { montoCanastillas, montoCombustible, otros, total };
 }
 
 export async function guardarCostosDia() {
   if (!cdFecha) return;
   const cant = parseInt(document.getElementById('cd-canastillas').value) || 0;
   const combustible = document.getElementById('cd-combustible').checked;
+  const otros = parseFloat(document.getElementById('cd-otros').value) || 0;
   const btn = document.getElementById('cd-save-btn');
   if (btn) btn.disabled = true;
   const { error } = await supabase.from('costos_dia').upsert({
-    fecha: cdFecha, cantidad_canastillas: cant, combustible, updated_at: new Date().toISOString(),
+    fecha: cdFecha, cantidad_canastillas: cant, combustible, otros_costos: otros, updated_at: new Date().toISOString(),
   }, { onConflict: 'fecha' });
   if (btn) btn.disabled = false;
   if (error) { toast('Error al guardar: ' + error.message, true); return; }
@@ -162,16 +173,18 @@ export async function guardarCostosDia() {
 }
 
 // ───────── RESUMEN DE COSTOS DEL DÍA — múltiples ubicaciones (Módulo 3 + Dashboard) ─────────
+// Devuelve {total, costoPorCaja, cajasTotal} además de pintar el resumen, así
+// el Dashboard puede reusar el mismo número real del día para su KPI en vez
+// de recalcular (o desalinearse) por su cuenta.
 export async function renderResumenCostosDia(fecha) {
   const targets = document.querySelectorAll('.resumen-costos-dia');
-  if (!targets.length) return;
+  if (!targets.length) return null;
   targets.forEach(el => { el.innerHTML = '<div class="dc-empty">Calculando...</div>'; });
 
-  const [pdRes, peRes, cdRes, actRes] = await Promise.all([
+  const [pdRes, peRes, cdRes] = await Promise.all([
     supabase.from('personal_dia').select('*').eq('fecha', fecha).maybeSingle(),
     supabase.from('personal_dia_empleados').select('empleado_id, empleados_esmeralda(costo_dia)').eq('fecha', fecha),
     supabase.from('costos_dia').select('*').eq('fecha', fecha).maybeSingle(),
-    supabase.from('actividades').select('codigo, cajas_producidas').eq('fecha', fecha),
   ]);
 
   const pd = pdRes.data ? mapPersonalDia(pdRes.data) : null;
@@ -180,26 +193,30 @@ export async function renderResumenCostosDia(fecha) {
   const cd = cdRes.data ? mapCostosDia(cdRes.data) : null;
   const montoCanastillas = (cd?.canastillas || 0) * COSTO_CANASTILLA;
   const montoCombustible = cd?.combustible ? COSTO_COMBUSTIBLE_DIA : 0;
+  const otrosCostosDia = cd?.otrosCostos || 0;
 
-  const codigos = (actRes.data || []).map(a => a.codigo);
-  let costoMaquinaTotal = 0;
-  if (codigos.length) {
-    const { data: costosData } = await supabase.from('costos').select('actividad_codigo, c_maq').in('actividad_codigo', codigos);
-    costoMaquinaTotal = (costosData || []).reduce((s, c) => s + (parseFloat(c.c_maq) || 0), 0);
-  }
-  const cajasTotal = (actRes.data || []).reduce((s, a) => s + (parseInt(a.cajas_producidas) || 0), 0);
+  const dayActs = actividadesDB.filter(a => a.fecha === fecha);
+  const costoMaquinaTotal = dayActs.reduce((s, a) => s + costoMaquinaActividad(a), 0);
+  // Costos manuales cargados por actividad antes de este cambio (el flujo de
+  // "costear una actividad a mano" ya no existe) — se conservan en el total
+  // para no perder datos históricos, pero solo aparecen si hay algo cargado.
+  const costoLegacyActividades = dayActs.reduce((s, a) => s + (costosDB[a.id]?.total || 0), 0);
+  const cajasTotal = dayActs.reduce((s, a) => s + (a.cajas || 0), 0);
 
-  const total = costoEsm + costoSvc + montoCanastillas + montoCombustible + costoMaquinaTotal;
+  const total = costoEsm + costoSvc + costoMaquinaTotal + costoLegacyActividades + otrosCostosDia + montoCanastillas + montoCombustible;
   const costoPorCaja = cajasTotal > 0 ? total / cajasTotal : 0;
 
   const html = `
     <div class="di-row"><span class="di-l">Personal Esmeralda (día)</span><span class="di-v">${fmt(costoEsm)}</span></div>
     <div class="di-row"><span class="di-l">Personal Service (día)</span><span class="di-v">${fmt(costoSvc)}</span></div>
-    <div class="di-row"><span class="di-l">Máquinas (incl. vapor/agua/luz)</span><span class="di-v">${fmt(costoMaquinaTotal)}</span></div>
+    <div class="di-row"><span class="di-l">Máquinas (horas × tarifa de equipo)</span><span class="di-v">${fmt(costoMaquinaTotal)}</span></div>
+    ${costoLegacyActividades ? `<div class="di-row"><span class="di-l">Costos de actividad (histórico)</span><span class="di-v">${fmt(costoLegacyActividades)}</span></div>` : ''}
+    <div class="di-row"><span class="di-l">Otros costos del día</span><span class="di-v">${fmt(otrosCostosDia)}</span></div>
     <div class="di-row"><span class="di-l">Limpieza de canastillas</span><span class="di-v">${fmt(montoCanastillas)}</span></div>
     <div class="di-row"><span class="di-l">Combustible</span><span class="di-v">${fmt(montoCombustible)}</span></div>
     <div class="di-row" style="border-top:2px solid var(--b100);margin-top:4px;padding-top:8px"><span class="di-l" style="font-weight:600;color:var(--b800)">TOTAL DEL DÍA</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b600)">${fmt(total)}</span></div>
     <div class="di-row" style="margin-top:8px"><span class="di-l">Cajas producidas</span><span class="di-v">${cajasTotal}</span></div>
     <div class="di-row"><span class="di-l" style="font-weight:600;color:var(--b800)">Costo por caja</span><span class="di-v" style="font-weight:700;color:#7c3aed">${cajasTotal > 0 ? fmt(costoPorCaja) : '—'}</span></div>`;
   targets.forEach(el => { el.innerHTML = html; });
+  return { total, costoPorCaja, cajasTotal };
 }

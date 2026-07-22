@@ -10,7 +10,7 @@ import {
   guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
-import { renderM3, selectActividad, calcCostoDetalle, guardarCosto, mapCosto, toggleCostosDiaSection } from './m3.js';
+import { renderM3, selectActividad, mapCosto, toggleCostosDiaSection } from './m3.js';
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
@@ -27,7 +27,7 @@ Object.assign(window, {
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog,
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal,
-  renderM3, selectActividad, calcCostoDetalle, guardarCosto, toggleCostosDiaSection,
+  renderM3, selectActividad, toggleCostosDiaSection,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP,
   abrirDetalleNP, volverAProduccion, actualizarDetalleNP,
   calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia,
