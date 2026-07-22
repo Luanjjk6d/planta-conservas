@@ -9,7 +9,7 @@ import { empleadosEsmeraldaDB } from './state.js';
 import { esc, toast, fmt } from './utils.js';
 import { COSTO_CANASTILLA, COSTO_COMBUSTIBLE_DIA } from './constants.js';
 
-// ───────── PERSONAL DEL DÍA (Dashboard) ─────────
+// ───────── PERSONAL DEL DÍA (Módulo 3) ─────────
 let pdFecha = null;
 let pdData = null;
 let pdEmpleadoIds = [];
@@ -148,13 +148,14 @@ export async function guardarCostosDia() {
   if (btn) btn.disabled = false;
   if (error) { toast('Error al guardar: ' + error.message, true); return; }
   toast('Costos del día guardados');
+  await renderResumenCostosDia(cdFecha);
 }
 
-// ───────── RESUMEN DE COSTOS DEL DÍA (Dashboard) ─────────
+// ───────── RESUMEN DE COSTOS DEL DÍA — múltiples ubicaciones (Módulo 3 + Dashboard) ─────────
 export async function renderResumenCostosDia(fecha) {
-  const el = document.getElementById('d-resumen-costos');
-  if (!el) return;
-  el.innerHTML = '<div class="dc-empty">Calculando...</div>';
+  const targets = document.querySelectorAll('.resumen-costos-dia');
+  if (!targets.length) return;
+  targets.forEach(el => { el.innerHTML = '<div class="dc-empty">Calculando...</div>'; });
 
   const [pdRes, peRes, cdRes, actRes] = await Promise.all([
     supabase.from('personal_dia').select('*').eq('fecha', fecha).maybeSingle(),
@@ -181,7 +182,7 @@ export async function renderResumenCostosDia(fecha) {
   const total = costoEsm + costoSvc + montoCanastillas + montoCombustible + costoMaquinaTotal;
   const costoPorCaja = cajasTotal > 0 ? total / cajasTotal : 0;
 
-  el.innerHTML = `
+  const html = `
     <div class="di-row"><span class="di-l">Personal Esmeralda (día)</span><span class="di-v">${fmt(costoEsm)}</span></div>
     <div class="di-row"><span class="di-l">Personal Service (día)</span><span class="di-v">${fmt(costoSvc)}</span></div>
     <div class="di-row"><span class="di-l">Máquinas (incl. vapor/agua/luz)</span><span class="di-v">${fmt(costoMaquinaTotal)}</span></div>
@@ -190,4 +191,5 @@ export async function renderResumenCostosDia(fecha) {
     <div class="di-row" style="border-top:2px solid var(--b100);margin-top:4px;padding-top:8px"><span class="di-l" style="font-weight:600;color:var(--b800)">TOTAL DEL DÍA</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b600)">${fmt(total)}</span></div>
     <div class="di-row" style="margin-top:8px"><span class="di-l">Cajas producidas</span><span class="di-v">${cajasTotal}</span></div>
     <div class="di-row"><span class="di-l" style="font-weight:600;color:var(--b800)">Costo por caja</span><span class="di-v" style="font-weight:700;color:#7c3aed">${cajasTotal > 0 ? fmt(costoPorCaja) : '—'}</span></div>`;
+  targets.forEach(el => { el.innerHTML = html; });
 }

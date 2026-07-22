@@ -57,7 +57,7 @@ export async function eliminarEmpleado(id) {
   toast(`"${emp?.nombre}" eliminado`);
 }
 
-// Editar costo/día de un empleado — se ofrece desde el Dashboard (Personal
+// Editar costo/día de un empleado — se ofrece desde el Módulo 3 (Personal
 // del día), no desde el checklist de Módulo 2 (que a propósito no muestra
 // montos por confidencialidad).
 export function openCostoEmpleadoModal(id) {
