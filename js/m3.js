@@ -195,13 +195,7 @@ export function refreshIfSelected(id) {
 
 export function updateCostosSummary(dayData = actividadesDB.filter(a => a.fecha === viewDate.current)) {
   const vals = dayData.map(a => costosDB[a.id]).filter(Boolean);
-  const totMaq = vals.reduce((s, c) => s + (c.cMaq || 0), 0);
-  const totOtros = vals.reduce((s, c) => s + (c.costoOtros || 0), 0);
   const grand = vals.reduce((s, c) => s + (c.total || 0), 0);
-  const el = document.getElementById('sum-maq');
-  if (el) {
-    el.textContent = fmtN(totMaq);
-    document.getElementById('sum-otros').textContent = fmtN(totOtros);
-    document.getElementById('sum-total').textContent = fmtN(grand);
-  }
+  const el = document.getElementById('sum-total');
+  if (el) el.textContent = fmtN(grand);
 }

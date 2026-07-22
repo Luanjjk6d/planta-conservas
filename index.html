@@ -266,11 +266,13 @@
 
       <div class="divider"></div>
       <p class="stitle">Resumen de costos por actividad</p>
-      <div class="costos-summary">
-        <div class="ck"><div class="ck-l">S/. Máquinas (incl. vapor/agua/luz)</div><div class="ck-v" id="sum-maq">0.00</div></div>
-        <div class="ck"><div class="ck-l">S/. Otros costos</div><div class="ck-v" id="sum-otros">0.00</div></div>
-        <div class="ck"><div class="ck-l">S/. Total actividades</div><div class="ck-v" id="sum-total">0.00</div></div>
+      <div class="costos-summary" style="grid-template-columns:1fr">
+        <div class="ck"><div class="ck-l">S/. Total actividad</div><div class="ck-v" id="sum-total">0.00</div></div>
       </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Resumen del costo del día</p>
+      <div class="resumen-costos-dia" id="m3-resumen-dia"><div class="dc-empty">Sin datos</div></div>
 
       <div class="divider"></div>
       <p class="stitle">Costos del día</p>
@@ -304,10 +306,6 @@
       <div class="bgrp" style="margin-top:.75rem">
         <button class="btn-p" id="pd-save-btn" onclick="guardarPersonalDia()">Guardar →</button>
       </div>
-
-      <div class="divider"></div>
-      <p class="stitle">Resumen de costos del día</p>
-      <div class="resumen-costos-dia" id="m3-resumen-dia"><div class="dc-empty">Sin datos</div></div>
     </div>
 
     <!-- Panel derecho: detalle + inputs de costo -->
