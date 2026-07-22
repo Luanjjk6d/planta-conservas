@@ -4,7 +4,7 @@ import { esc, fmt, fmtN, mHM, toast } from './utils.js';
 import { stL } from './constants.js';
 import { rendM2 } from './m2.js';
 import { viewDate } from './viewDate.js';
-import { cargarCostosDia } from './costeoDia.js';
+import { cargarCostosDia, cargarPersonalDia } from './costeoDia.js';
 
 let selectedActId = null;
 
@@ -21,6 +21,7 @@ export function mapCosto(row) {
 
 export function renderM3() {
   cargarCostosDia(viewDate.current);
+  cargarPersonalDia(viewDate.current);
   const listEl = document.getElementById('m3-actividades-list');
   const dayData = actividadesDB.filter(a => a.fecha === viewDate.current);
   if (!dayData.length) {

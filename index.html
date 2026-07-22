@@ -274,7 +274,7 @@
 
       <div class="divider"></div>
       <p class="stitle">Costos del día</p>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Costos fijos que no dependen de una actividad puntual — Personal Esmeralda/Service se declara ahora en el <strong>Dashboard</strong>.</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Costos fijos que no dependen de una actividad puntual.</p>
       <div class="field"><label>Cantidad de canastillas (S/.1.30 c/u)</label><input type="number" id="cd-canastillas" placeholder="0" min="0" step="1" oninput="calcularCostosDia()"></div>
       <div class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
         <input type="checkbox" id="cd-combustible" onchange="calcularCostosDia()" style="width:auto">
@@ -283,6 +283,26 @@
       <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total costos fijos del día</span><span class="di-v" id="cd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
       <div class="bgrp" style="margin-top:.75rem">
         <button class="btn-p" id="cd-save-btn" onclick="guardarCostosDia()">Guardar →</button>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Personal del día</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Se declara una vez por día — no por actividad.</p>
+      <div class="subgroup-title">Personal Esmeralda (participaron hoy)</div>
+      <div id="pd-esm-list" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white);margin-bottom:.75rem"></div>
+
+      <div class="subgroup-title">Personal Service</div>
+      <div class="frow">
+        <div class="field"><label>Hombres</label><input type="number" id="pd-svc-h" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+        <div class="field"><label>Mujeres</label><input type="number" id="pd-svc-m" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>S/. por hora</label><input type="number" id="pd-svc-costo" placeholder="0.00" min="0" step="0.01" oninput="calcularPersonalDia()"></div>
+        <div class="field"><label>Horas del día</label><input type="number" id="pd-horas" placeholder="0" min="0" step="0.5" oninput="calcularPersonalDia()"></div>
+      </div>
+      <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total personal del día</span><span class="di-v" id="pd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
+      <div class="bgrp" style="margin-top:.75rem">
+        <button class="btn-p" id="pd-save-btn" onclick="guardarPersonalDia()">Guardar →</button>
       </div>
     </div>
 
@@ -328,28 +348,7 @@
     <div class="npd-linea" id="d-linea"></div>
 
     <div class="dg">
-      <div class="dc">
-        <div class="dc-hdr"><span class="dc-title">Personal del día</span></div>
-        <div class="dc-body">
-          <div class="subgroup-title">Personal Esmeralda (participaron hoy)</div>
-          <div id="pd-esm-list" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white);margin-bottom:.75rem"></div>
-
-          <div class="subgroup-title">Personal Service</div>
-          <div class="frow">
-            <div class="field"><label>Hombres</label><input type="number" id="pd-svc-h" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
-            <div class="field"><label>Mujeres</label><input type="number" id="pd-svc-m" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
-          </div>
-          <div class="frow">
-            <div class="field"><label>S/. por hora</label><input type="number" id="pd-svc-costo" placeholder="0.00" min="0" step="0.01" oninput="calcularPersonalDia()"></div>
-            <div class="field"><label>Horas del día</label><input type="number" id="pd-horas" placeholder="0" min="0" step="0.5" oninput="calcularPersonalDia()"></div>
-          </div>
-          <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total personal del día</span><span class="di-v" id="pd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
-          <div class="bgrp" style="margin-top:.75rem">
-            <button class="btn-p" id="pd-save-btn" onclick="guardarPersonalDia()">Guardar →</button>
-          </div>
-        </div>
-      </div>
-      <div class="dc">
+      <div class="dc" style="grid-column:1 / -1">
         <div class="dc-hdr"><span class="dc-title">Resumen de costos del día</span></div>
         <div class="dc-body" id="d-resumen-costos"><div class="dc-empty">Sin datos</div></div>
       </div>

@@ -1,9 +1,9 @@
 // Costeo por día — reemplaza el costeo por proceso para Personal Esmeralda,
-// Personal Service, canastillas y combustible. "Personal del día" vive en
-// el Dashboard (declaración global, no por actividad). "Costos del día"
-// (canastillas/combustible) vive en Módulo 3. El resumen final (costo
-// total del día y costo por caja) se calcula en el Dashboard, juntando
-// ambos más el costo de máquina de las actividades de ese día.
+// Personal Service, canastillas y combustible. Toda la carga vive en
+// Módulo 3 (declaración global por fecha, no por actividad) — el Dashboard
+// es solo lectura: muestra el resumen final (costo total del día y costo
+// por caja), juntando personal + canastillas + combustible + el costo de
+// máquina de las actividades de ese día.
 import { supabase } from './supabaseClient.js';
 import { empleadosEsmeraldaDB } from './state.js';
 import { esc, toast, fmt } from './utils.js';
