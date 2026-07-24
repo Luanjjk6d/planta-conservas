@@ -60,6 +60,15 @@ export function toggleProyMenu(id) {
   renderProyectos();
 }
 
+function _etiquetaFicha(id) {
+  const nT = contarTareasDeProyecto(id), nR = contarReunionesDeProyecto(id);
+  if (!nT && !nR) return '+ Agregar actividades o reuniones →';
+  const partes = [];
+  if (nT) partes.push(`${nT} actividad${nT !== 1 ? 'es' : ''}`);
+  if (nR) partes.push(`${nR} reunión${nR !== 1 ? 'es' : ''}`);
+  return partes.join(' · ') + ' →';
+}
+
 export function renderProyectos() {
   document.querySelectorAll('.proy-filter').forEach(b => b.classList.toggle('active', b.dataset.estado === filtroEstado));
   const el = document.getElementById('list-proy');
@@ -99,7 +108,7 @@ export function renderProyectos() {
         <div class="proy-pct">${p.avance}%</div>
         <div class="proy-row-fecha">${p.fechaMeta ? 'Meta: ' + fF(p.fechaMeta) : 'Sin fecha meta'}</div>
         <div class="proy-actions">
-          <a href="#" onclick="abrirFichaProyecto(${p.id});return false;">${contarTareasDeProyecto(p.id)} tarea${contarTareasDeProyecto(p.id) !== 1 ? 's' : ''} · ${contarReunionesDeProyecto(p.id)} reunión${contarReunionesDeProyecto(p.id) !== 1 ? 'es' : ''}</a>
+          <a href="#" class="proy-link-ficha" onclick="abrirFichaProyecto(${p.id});return false;">${_etiquetaFicha(p.id)}</a>
           <a href="#" onclick="editProyecto(${p.id});return false;">Editar</a>
         </div>
       </div>
