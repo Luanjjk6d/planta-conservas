@@ -5,20 +5,31 @@ import { esc, fF, toast, localDateStr } from './utils.js';
 const ESTADO_LABEL = { planificado: 'Planificado', en_curso: 'En curso', pausado: 'Pausado', completado: 'Completado' };
 const ESTADO_COLOR = { planificado: '#8FA3BE', en_curso: '#378ADD', pausado: '#E65100', completado: '#16a34a' };
 const ESTADO_RANK = { planificado: 0, en_curso: 0, pausado: 0, completado: 1 };
+const PRIORIDAD_LABEL = { baja: 'Baja', media: 'Media', alta: 'Alta' };
 
 let filtroEstado = 'todos';
 let editingProyId = null;
+let deletingProy = null; // { id, nombre } — pendiente de confirmar
+let menuAbiertoId = null;
 
 export function mapProyecto(row) {
   return {
     id: row.id,
     nombre: row.nombre,
+    categoria: row.categoria || '',
+    cliente: row.cliente || '',
     responsable: row.responsable || '',
     estado: row.estado,
+    prioridad: row.prioridad || 'media',
     avance: row.avance,
+    fechaInicio: row.fecha_inicio,
     fechaMeta: row.fecha_meta,
     fechaCierre: row.fecha_cierre,
+    ultimoAvance: row.ultimo_avance || '',
+    proximoPaso: row.proximo_paso || '',
+    bloqueoPrincipal: row.bloqueo_principal || '',
     nota: row.nota || '',
+    updatedAt: row.updated_at,
   };
 }
 
@@ -41,6 +52,11 @@ export function setProyectoFiltro(estado) {
   renderProyectos();
 }
 
+export function toggleProyMenu(id) {
+  menuAbiertoId = menuAbiertoId === id ? null : id;
+  renderProyectos();
+}
+
 export function renderProyectos() {
   document.querySelectorAll('.proy-filter').forEach(b => b.classList.toggle('active', b.dataset.estado === filtroEstado));
   const el = document.getElementById('list-proy');
@@ -55,25 +71,33 @@ export function renderProyectos() {
   }
 
   el.innerHTML = data.map(p => {
-    let meta;
-    if (p.estado === 'completado') meta = 'Cerrado ' + fF(p.fechaCierre);
-    else if (p.nota) meta = esc(p.nota);
-    else if (p.fechaMeta) meta = 'Meta: ' + fF(p.fechaMeta);
-    else meta = 'Sin fecha meta';
-
+    const metaLinea = [p.cliente, p.responsable, p.categoria].filter(Boolean).join(' · ');
     return `<div class="proy-row ${p.estado}">
-      <span class="pbadge ${p.estado}">${ESTADO_LABEL[p.estado]}</span>
-      <div class="proy-main">
+      <div class="proy-row-top">
+        <span class="pbadge ${p.estado}">${ESTADO_LABEL[p.estado]}</span>
+        <span class="pbadge-prioridad ${p.prioridad}">${PRIORIDAD_LABEL[p.prioridad] || 'Media'}</span>
         <div class="proy-name">${esc(p.nombre)}</div>
-        <div class="proy-meta">${p.responsable ? esc(p.responsable) + ' · ' : ''}${meta}</div>
+        <div class="proy-menu">
+          <button class="proy-menu-btn" onclick="toggleProyMenu(${p.id})" title="Más acciones">⋯</button>
+          ${menuAbiertoId === p.id ? `<div class="proy-menu-dd"><button onclick="abrirConfirmEliminarProyecto(${p.id})">Eliminar</button></div>` : ''}
+        </div>
       </div>
-      <div class="proy-bar-wrap">
-        <div class="proy-bar-bg"><div class="proy-bar-fill" style="width:${p.avance}%;background:${ESTADO_COLOR[p.estado]}"></div></div>
+      ${metaLinea ? `<div class="proy-meta">${esc(metaLinea)}</div>` : ''}
+      <div class="proy-detail">
+        ${p.ultimoAvance ? `<div><span class="proy-detail-l">Último avance:</span> ${esc(p.ultimoAvance)}</div>` : ''}
+        ${p.proximoPaso ? `<div><span class="proy-detail-l">Próximo paso:</span> ${esc(p.proximoPaso)}</div>` : ''}
+        ${p.bloqueoPrincipal ? `<div class="proy-bloqueo"><span class="proy-detail-l">Bloqueo:</span> ${esc(p.bloqueoPrincipal)}</div>` : ''}
+        ${!p.ultimoAvance && !p.proximoPaso && !p.bloqueoPrincipal && p.nota ? `<div><span class="proy-detail-l">Nota:</span> ${esc(p.nota)}</div>` : ''}
       </div>
-      <div class="proy-pct">${p.avance}%</div>
-      <div class="proy-actions">
-        <a href="#" onclick="editProyecto(${p.id});return false;" style="font-size:12px;color:var(--b600);font-weight:500">Editar</a>
-        <button class="link-del" onclick="eliminarProyecto(${p.id})">Eliminar</button>
+      <div class="proy-row-bottom">
+        <div class="proy-bar-wrap">
+          <div class="proy-bar-bg"><div class="proy-bar-fill" style="width:${p.avance}%;background:${ESTADO_COLOR[p.estado]}"></div></div>
+        </div>
+        <div class="proy-pct">${p.avance}%</div>
+        <div class="proy-row-fecha">${p.fechaMeta ? 'Meta: ' + fF(p.fechaMeta) : 'Sin fecha meta'}</div>
+        <div class="proy-actions">
+          <a href="#" onclick="editProyecto(${p.id});return false;">Editar</a>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -84,10 +108,17 @@ export function openProyectoModal(id = null) {
   const p = id ? proyectosDB.find(x => x.id === id) : null;
   document.getElementById('proy-modal-title').textContent = id ? 'Editar proyecto' : 'Nuevo proyecto';
   document.getElementById('proy-nombre').value = p?.nombre || '';
+  document.getElementById('proy-categoria').value = p?.categoria || '';
+  document.getElementById('proy-cliente').value = p?.cliente || '';
   document.getElementById('proy-responsable').value = p?.responsable || '';
   document.getElementById('proy-estado').value = p?.estado || 'planificado';
+  document.getElementById('proy-prioridad').value = p?.prioridad || 'media';
   document.getElementById('proy-avance').value = p ? p.avance : 0;
+  document.getElementById('proy-fecha-inicio').value = p?.fechaInicio || '';
   document.getElementById('proy-fecha-meta').value = p?.fechaMeta || '';
+  document.getElementById('proy-ultimo-avance').value = p?.ultimoAvance || '';
+  document.getElementById('proy-proximo-paso').value = p?.proximoPaso || '';
+  document.getElementById('proy-bloqueo').value = p?.bloqueoPrincipal || '';
   document.getElementById('proy-nota').value = p?.nota || '';
   document.getElementById('proyecto-modal-ov').classList.add('open');
   setTimeout(() => document.getElementById('proy-nombre').focus(), 100);
@@ -108,10 +139,17 @@ export async function confirmProyectoModal() {
 
   const record = {
     nombre,
+    categoria: document.getElementById('proy-categoria').value.trim() || null,
+    cliente: document.getElementById('proy-cliente').value.trim() || null,
     responsable: document.getElementById('proy-responsable').value.trim() || null,
     estado,
+    prioridad: document.getElementById('proy-prioridad').value,
     avance: Math.min(100, Math.max(0, parseInt(document.getElementById('proy-avance').value) || 0)),
+    fecha_inicio: document.getElementById('proy-fecha-inicio').value || null,
     fecha_meta: document.getElementById('proy-fecha-meta').value || null,
+    ultimo_avance: document.getElementById('proy-ultimo-avance').value.trim() || null,
+    proximo_paso: document.getElementById('proy-proximo-paso').value.trim() || null,
+    bloqueo_principal: document.getElementById('proy-bloqueo').value.trim() || null,
     nota: document.getElementById('proy-nota').value.trim() || null,
     fecha_cierre: estado === 'completado' ? (prev?.fechaCierre || localDateStr()) : null,
     updated_at: new Date().toISOString(),
@@ -133,12 +171,31 @@ export async function confirmProyectoModal() {
   renderProyectos();
 }
 
-export async function eliminarProyecto(id) {
-  if (!confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) return;
+// Eliminar — requiere confirmación explícita en un modal propio (no
+// window.confirm) que muestra el nombre del proyecto, para evitar borrados
+// accidentales con un solo clic.
+export function abrirConfirmEliminarProyecto(id) {
+  menuAbiertoId = null;
+  const p = proyectosDB.find(x => x.id === id);
+  if (!p) return;
+  deletingProy = { id: p.id, nombre: p.nombre };
+  document.getElementById('confirm-delete-nombre').textContent = p.nombre;
+  document.getElementById('confirm-delete-modal-ov').classList.add('open');
+}
+
+export function closeConfirmDeleteModal() {
+  document.getElementById('confirm-delete-modal-ov').classList.remove('open');
+  deletingProy = null;
+}
+
+export async function confirmarEliminarProyectoModal() {
+  if (!deletingProy) return;
+  const { id } = deletingProy;
   const { error } = await supabase.from('proyectos').delete().eq('id', id);
   if (error) { toast('Error al eliminar: ' + error.message, true); return; }
   const idx = proyectosDB.findIndex(p => p.id === id);
   if (idx !== -1) proyectosDB.splice(idx, 1);
+  closeConfirmDeleteModal();
   renderProyectos();
   toast('Proyecto eliminado');
 }

@@ -1,23 +1,33 @@
-# Planta de Conservas — MES
+# Plataforma Conservas
 
-Sistema de registro y costeo de producción para una planta de conservas. Frontend estático (HTML/CSS/JS sin build step) conectado a [Supabase](https://supabase.com) (Postgres) como base de datos. Acceso abierto, sin login — pensado para uso interno de planta.
+Dos espacios independientes dentro del mismo proyecto: **MES Planta** (registro y costeo de producción) y **Gestión Conservas** (seguimiento de proyectos, actividades y decisiones del área). Frontend estático (HTML/CSS/JS sin build step) conectado a [Supabase](https://supabase.com) (Postgres) como base de datos.
+
+`index.html` es la puerta de entrada — un selector con acceso por código provisional (ver `js/accessConfig.js`, nivel de seguridad cosmético, no reemplaza autenticación real) hacia `mes.html` o `gestion.html`.
 
 ## Estructura
 
 ```
-index.html              shell de la app (header, nav, 4 módulos, modal, toast)
-css/styles.css           estilos
+index.html               selector de espacios (MES Planta / Gestión Conservas)
+mes.html                  MES Planta — header, nav (4 módulos), modales
+gestion.html              Gestión Conservas — header, nav (6 módulos), modales
+css/
+  styles.css               estilos compartidos (variables, header, nav, componentes)
+  plataforma.css            estilos propios del selector (index.html)
 js/
-  config.example.js      plantilla de credenciales de Supabase
-  config.js               credenciales reales (ver Paso 3)
-  supabaseClient.js       cliente Supabase (createClient)
-  state.js                arrays/objetos en memoria compartidos entre módulos
-  utils.js, constants.js  utilidades y constantes compartidas
-  lookups.js, modal.js    catálogos dinámicos (productos/procesos/equipos) y el modal "+"
-  m1.js, m2.js, m3.js     lógica de cada módulo (Información general, Actividad, Costos)
-  dashboard.js            KPIs y gráficos (Chart.js)
-  main.js                 punto de entrada: carga inicial + wiring de la UI
-sql/001_init.sql          schema completo + datos semilla + políticas RLS
+  config.example.js        plantilla de credenciales de Supabase
+  config.js                 credenciales reales (ver Paso 3)
+  supabaseClient.js         cliente Supabase (createClient)
+  accessConfig.js, accessGate.js, exitGate.js   código de acceso por espacio (provisional)
+  plataformaMain.js         wiring del selector (index.html)
+  state.js                  arrays/objetos en memoria compartidos entre módulos
+  utils.js, constants.js    utilidades y constantes compartidas
+  lookups.js, modal.js      catálogos dinámicos (productos/procesos/equipos) y el modal "+"
+  m1.js, m2.js, m3.js       lógica de cada módulo MES (Información general, Actividad, Costos)
+  dashboard.js              KPIs y gráficos (Chart.js) — Dashboard del MES
+  main.js                   punto de entrada de mes.html: carga inicial + wiring
+  proyectos.js               módulo Proyectos (vive en Gestión Conservas)
+  gestionMain.js             punto de entrada de gestion.html: carga inicial + wiring
+sql/001_init.sql           schema completo + datos semilla + políticas RLS (más migraciones incrementales 002-019)
 ```
 
 ## Puesta en marcha

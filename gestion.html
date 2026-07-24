@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión Conservas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="css/styles.css" rel="stylesheet">
+</head>
+<body data-espacio="gestion">
+<script>if(!sessionStorage.getItem('acceso_gestion'))location.href='index.html';</script>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Gestión Conservas</div>
+      <div class="hdr-sub">Seguimiento de proyectos, actividades y decisiones</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-date" id="hdr-date"></div>
+    <button class="hdr-exit" onclick="salirEspacio()" title="Volver al selector de espacios">Salir</button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb active" onclick="showPage('resumen',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Resumen
+  </button>
+  <button class="nb" onclick="showPage('proy',this);fetchProyectos()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg>
+    Proyectos
+  </button>
+  <button class="nb" onclick="showPage('actividades',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Actividades
+  </button>
+  <button class="nb" onclick="showPage('reuniones',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Reuniones y acuerdos
+  </button>
+  <button class="nb" onclick="showPage('riesgos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Riesgos y decisiones
+  </button>
+  <button class="nb" onclick="showPage('calendario',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Calendario
+  </button>
+</nav>
+
+<!-- ═══════════ RESUMEN ═══════════ -->
+<div id="page-resumen" class="page active">
+  <div class="dash">
+    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>Estructura inicial de Resumen — próximamente, indicadores y filtros globales.</div>
+  </div>
+</div>
+
+<!-- ═══════════ PROYECTOS ═══════════ -->
+<div id="page-proy" class="page">
+  <div class="dash">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:12px">
+      <div class="proy-filters">
+        <button class="proy-filter active" data-estado="todos" onclick="setProyectoFiltro('todos')">Todos</button>
+        <button class="proy-filter" data-estado="planificado" onclick="setProyectoFiltro('planificado')">Planificado</button>
+        <button class="proy-filter" data-estado="en_curso" onclick="setProyectoFiltro('en_curso')">En curso</button>
+        <button class="proy-filter" data-estado="pausado" onclick="setProyectoFiltro('pausado')">Pausado</button>
+        <button class="proy-filter" data-estado="completado" onclick="setProyectoFiltro('completado')">Completado</button>
+      </div>
+      <button class="btn-p" onclick="openProyectoModal()">+ Nuevo proyecto</button>
+    </div>
+    <div id="list-proy"><div class="empty" style="padding:2.5rem">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ ACTIVIDADES ═══════════ -->
+<div id="page-actividades" class="page">
+  <div class="dash">
+    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Estructura inicial de Actividades — próximamente.</div>
+  </div>
+</div>
+
+<!-- ═══════════ REUNIONES Y ACUERDOS ═══════════ -->
+<div id="page-reuniones" class="page">
+  <div class="dash">
+    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>Estructura inicial de Reuniones y acuerdos — próximamente.</div>
+  </div>
+</div>
+
+<!-- ═══════════ RIESGOS Y DECISIONES ═══════════ -->
+<div id="page-riesgos" class="page">
+  <div class="dash">
+    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>Estructura inicial de Riesgos y decisiones — próximamente.</div>
+  </div>
+</div>
+
+<!-- ═══════════ CALENDARIO ═══════════ -->
+<div id="page-calendario" class="page">
+  <div class="dash">
+    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>Estructura inicial de Calendario — próximamente.</div>
+  </div>
+</div>
+
+<!-- MODAL PROYECTO -->
+<div class="modal-ov" id="proyecto-modal-ov">
+  <div class="modal" style="width:420px;max-height:85vh;overflow-y:auto">
+    <div class="modal-title" id="proy-modal-title">Nuevo proyecto</div>
+    <div class="field"><label>Nombre del proyecto</label><input type="text" id="proy-nombre" placeholder="Ej: Instalación nueva selladora"></div>
+    <div class="frow">
+      <div class="field"><label>Categoría</label><input type="text" id="proy-categoria" placeholder="Ej: Mantenimiento"></div>
+      <div class="field"><label>Cliente</label><input type="text" id="proy-cliente" placeholder="Ej: Pesquera del Norte"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Responsable</label><input type="text" id="proy-responsable" placeholder="Ej: Victor"></div>
+      <div class="field"><label>Prioridad</label>
+        <select id="proy-prioridad">
+          <option value="baja">Baja</option>
+          <option value="media" selected>Media</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Estado</label>
+        <select id="proy-estado">
+          <option value="planificado">Planificado</option>
+          <option value="en_curso">En curso</option>
+          <option value="pausado">Pausado</option>
+          <option value="completado">Completado</option>
+        </select>
+      </div>
+      <div class="field"><label>Avance (%)</label><input type="number" id="proy-avance" min="0" max="100" placeholder="0"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Fecha de inicio</label><input type="date" id="proy-fecha-inicio"></div>
+      <div class="field"><label>Fecha objetivo</label><input type="date" id="proy-fecha-meta"></div>
+    </div>
+    <div class="field"><label>Último avance</label><input type="text" id="proy-ultimo-avance" placeholder="Ej: Se instaló la base de la máquina"></div>
+    <div class="field"><label>Próximo paso</label><input type="text" id="proy-proximo-paso" placeholder="Ej: Coordinar con el proveedor eléctrico"></div>
+    <div class="field"><label>Bloqueo principal (opcional)</label><input type="text" id="proy-bloqueo" placeholder="Ej: Espera repuesto"></div>
+    <div class="field"><label>Nota (opcional)</label><input type="text" id="proy-nota" placeholder="Nota general"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeProyectoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmProyectoModal()">Guardar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR PROYECTO -->
+<div class="modal-ov" id="confirm-delete-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Eliminar proyecto</div>
+    <p style="font-size:13px;color:var(--text);margin-bottom:.5rem">¿Eliminar <strong id="confirm-delete-nombre"></strong>?</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.5">Esta acción no se puede deshacer. Si el proyecto tiene actividades, reuniones o riesgos relacionados, esa información también se ve afectada.</p>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeConfirmDeleteModal()">Cancelar</button>
+      <button class="btn-p" style="background:linear-gradient(135deg,#dc2626,#991b1b);box-shadow:0 2px 8px rgba(220,38,38,.35)" onclick="confirmarEliminarProyectoModal()">Confirmar eliminación</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script type="module" src="js/gestionMain.js"></script>
+<script type="module" src="js/exitGate.js"></script>
+</body>
+</html>

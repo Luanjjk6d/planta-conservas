@@ -14,7 +14,6 @@ import { renderM3, selectActividad, mapCosto, toggleCostosDiaSection } from './m
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
-import { fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto } from './proyectos.js';
 import { abrirDetalleNP, volverAProduccion, actualizarDetalleNP } from './npDetalle.js';
 import { calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia } from './costeoDia.js';
 
@@ -32,7 +31,6 @@ Object.assign(window, {
   abrirDetalleNP, volverAProduccion, actualizarDetalleNP,
   calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,
-  fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto, eliminarProyecto,
 });
 
 // El día seleccionado (Módulo 1/2/3) es compartido — cada cambio vuelve a

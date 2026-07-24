@@ -1,0 +1,20 @@
+/* ── PANTALLA SELECTORA (index.html) ── */
+/* Reutiliza las variables de css/styles.css (colores, radios, sombras) —
+   este archivo solo agrega el layout propio de la puerta de entrada, no
+   toca ni redefine nada de styles.css. */
+.plat-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(circle at 20% 20%,var(--b50),var(--g50) 55%)}
+.plat-title{font-size:26px;font-weight:700;color:var(--b900);letter-spacing:-.02em;margin-bottom:6px;text-align:center}
+.plat-sub{font-size:14px;color:var(--muted);margin-bottom:2.5rem;text-align:center}
+.plat-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px;width:100%}
+@media (max-width:640px){.plat-cards{grid-template-columns:1fr}}
+.plat-card{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rxl);padding:28px 24px;box-shadow:var(--sh-sm);cursor:pointer;transition:var(--tr);text-align:left}
+.plat-card:hover{box-shadow:var(--sh-lg);transform:translateY(-2px);border-color:var(--b200)}
+.plat-card-ico{width:44px;height:44px;border-radius:var(--rlg);display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--b400),var(--b600));color:#fff}
+.plat-card-ico svg{width:22px;height:22px}
+.plat-card-title{font-size:16px;font-weight:700;color:var(--b900);margin-bottom:4px}
+.plat-card-desc{font-size:13px;color:var(--muted);line-height:1.5}
+.plat-card-cta{margin-top:16px;font-size:12px;font-weight:600;color:var(--b600);display:flex;align-items:center;gap:4px}
+
+/* Modal de código de acceso — mismo lenguaje visual que .modal-ov/.modal */
+.plat-error{font-size:12px;color:#dc2626;margin-top:8px;display:none}
+.plat-error.show{display:block}

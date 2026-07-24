@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planta de Conservas — MES</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="css/styles.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body data-espacio="mes">
+<script>if(!sessionStorage.getItem('acceso_mes'))location.href='index.html';</script>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M9 9V4m6 5V4M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1z"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Planta de Conservas — MES</div>
+      <div class="hdr-sub">Sistema de registro y costeo de producción</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-date" id="hdr-date"></div>
+    <button class="hdr-exit" onclick="salirEspacio()" title="Volver al selector de espacios">Salir</button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb active" onclick="showPage('m1',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg>
+    Módulo 1 — Información general
+  </button>
+  <button class="nb" onclick="showPage('m2',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Módulo 2 — Actividad en planta
+  </button>
+  <button class="nb" onclick="showPage('m3',this);renderM3()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Módulo 3 — Costos
+  </button>
+  <button class="nb" onclick="showPage('m4',this);renderDash();renderProduccionPorNP()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+</nav>
+
+<!-- ═══════════ MÓDULO 1 ═══════════ -->
+<div id="page-m1" class="page active">
+  <div class="layout">
+    <div class="fs">
+      <p class="stitle">Información general del proceso</p>
+      <div class="field">
+        <label>Número de parte</label>
+        <div class="sel-wrap">
+          <select id="m1-np"><option value="">Seleccionar...</option></select>
+          <button class="btn-add" onclick="openNpModal()">+</button>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Fecha de inicio</label><input type="date" id="m1-fecha" onchange="viewJumpDate(this.value)"></div>
+        <div class="field"><label>Hora de inicio</label><input type="time" id="m1-hora"></div>
+      </div>
+      <div class="field">
+        <label>Producto programado</label>
+        <div class="sel-wrap">
+          <select id="m1-prod"><option value="">Seleccionar...</option></select>
+          <button class="btn-add" onclick="openModal('m1-prod','Agregar producto','Ej: CABALLA...')">+</button>
+          <button class="btn-x" title="Eliminar productos" onclick="openManageModal('m1-prod','Productos')">×</button>
+        </div>
+      </div>
+      <div class="field"><label>Especie recepcionada</label><input type="text" id="m1-especie" placeholder="Ej: Thunnus albacares"></div>
+      <div class="field"><label>Peso recepcionado de materia prima (kg)</label><input type="number" id="m1-peso" placeholder="0.0" min="0" step="0.1"></div>
+      <div class="divider"></div>
+      <div class="frow">
+        <div class="field"><label>Supervisor responsable</label><input type="text" id="m1-sup" placeholder="Nombre del supervisor"></div>
+        <div class="field"><label>Turno de trabajo</label>
+          <select id="m1-turno"><option value="">Seleccionar...</option><option>Mañana (06:00 - 14:00)</option><option>Tarde (14:00 - 22:00)</option><option>Noche (22:00 - 06:00)</option></select>
+        </div>
+      </div>
+      <div class="bgrp">
+        <button class="btn-s" onclick="limpM1()">Limpiar</button>
+        <button class="btn-p" id="m1-save-btn" onclick="guarM1()">Guardar registro →</button>
+      </div>
+    </div>
+    <div class="rs">
+      <p class="stitle">Registros guardados</p>
+      <div class="date-nav" style="justify-content:flex-start">
+        <button class="btn-refresh" onclick="viewPrevDay()">‹</button>
+        <div class="date-nav-current"><span class="view-date-label"></span><input type="date" class="view-date-input" onchange="viewJumpDate(this.value)"></div>
+        <button class="btn-refresh view-date-next-btn" onclick="viewNextDay()">›</button>
+        <button class="btn-refresh" onclick="viewToday()">Hoy</button>
+      </div>
+      <div class="rlist" id="list-m1"><div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>Sin registros aún.</div></div>
+      <div style="margin-top:2rem">
+        <p class="stitle">Números de parte</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Un NP puede quedar abierto varios días — ciérralo aquí cuando termine esa producción.</p>
+        <div id="list-np"><div class="empty" style="padding:1.5rem">Sin números de parte.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MÓDULO 2 ═══════════ -->
+<div id="page-m2" class="page">
+  <div class="layout">
+    <div class="fs">
+      <p class="stitle">Registrar actividad</p>
+
+      <div class="chart-target-row" id="m2-edit-banner" style="display:none">
+        <span class="chart-target-label">Editando actividad <strong id="m2-edit-banner-id"></strong></span>
+        <a href="#" onclick="limpM2();return false;" style="color:var(--b600);font-weight:600;font-size:12px">Cancelar edición</a>
+      </div>
+
+      <div class="field">
+        <label>Número de parte (NP)</label>
+        <div class="sel-wrap">
+          <select id="m2-np"><option value="">Seleccionar...</option></select>
+          <button class="btn-add" onclick="openNpModal()">+</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Número de batch</label>
+        <input type="text" id="m2-batch" list="m2-batch-list" placeholder="Ej: 1, B-0001... — mismo batch en cada etapa">
+        <datalist id="m2-batch-list"></datalist>
+      </div>
+
+      <div class="field">
+        <label>Proceso / etapa</label>
+        <div class="sel-wrap">
+          <select id="m2-proc" onchange="sugerirEquipo()">
+            <option value="">Seleccionar proceso...</option>
+          </select>
+          <button class="btn-add" onclick="openModal('m2-proc','Agregar proceso','Ej: ESTERILIZACIÓN...')">+</button>
+          <button class="btn-x" title="Eliminar procesos" onclick="openManageModal('m2-proc','Procesos')">×</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Máquina / equipo utilizado</label>
+        <div class="sel-wrap">
+          <select id="m2-equipo">
+            <option value="">Seleccionar equipo...</option>
+          </select>
+          <button class="btn-add" onclick="openEquipoModal()">+</button>
+          <button class="btn-x" title="Gestionar equipos" onclick="openManageModal('m2-equipo','Equipos')">×</button>
+        </div>
+      </div>
+
+      <div class="frow">
+        <div class="field"><label>Hora de inicio</label><input type="time" id="m2-ini"></div>
+        <div class="field"><label>Hora de fin</label><input type="time" id="m2-fin"></div>
+      </div>
+      <div class="field"><label>Duración (calculada)</label><input type="text" id="m2-dur" readonly placeholder="Ingresa hora inicio y fin"></div>
+
+      <div class="frow">
+        <div class="field"><label>Peso de ingreso (kg)</label><input type="number" id="m2-ping" placeholder="0.0" min="0" step="0.1"></div>
+        <div class="field"><label>Peso de salida (kg)</label><input type="number" id="m2-psal" placeholder="0.0" min="0" step="0.1"></div>
+      </div>
+      <div class="field"><label>Cajas producidas (opcional)</label><input type="number" id="m2-cajas" placeholder="Ej: 120 — normalmente en Envasado" min="0" step="1"></div>
+      <div class="field"><label>Merma generada (kg) — automática</label><input type="number" id="m2-merma" readonly placeholder="Calculado automáticamente"></div>
+
+      <div class="field"><label>Estado del proceso</label>
+        <select id="m2-estado">
+          <option value="">Seleccionar...</option>
+          <option value="op">En operación</option>
+          <option value="det">Detenido</option>
+          <option value="fin">Finalizado</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Personal asignado (inicial)</p>
+
+      <div class="subgroup-title">Service</div>
+      <div class="frow">
+        <div class="field"><label>Hombre</label><input type="number" id="m2-svc-h" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
+        <div class="field"><label>Mujer</label><input type="number" id="m2-svc-m" placeholder="0" min="0" oninput="calcTotalPersonal()"></div>
+      </div>
+
+      <div class="subgroup-title">Personal Esmeralda</div>
+      <div class="sel-wrap" style="align-items:flex-start">
+        <div id="m2-esm-employees" style="flex:1;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white)"></div>
+        <button class="btn-add" onclick="openEmpleadoModal()">+</button>
+      </div>
+
+      <div class="field"><label>Total personal (calculado)</label><input type="number" id="m2-total-p" readonly placeholder="0"></div>
+
+      <div class="bgrp">
+        <button class="btn-s" onclick="limpM2()">Limpiar</button>
+        <button class="btn-p" id="m2-save-btn" onclick="guarM2()">Registrar actividad →</button>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Historial de personal por actividad</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">El personal de un proceso cambia mientras corre — registra cada cambio aquí. El costeo en Módulo 3 usa siempre el último registro.</p>
+      <div class="field">
+        <label>Actividad</label>
+        <select id="m2-plog-act" onchange="rendPersonalLog()">
+          <option value="">Seleccionar actividad...</option>
+        </select>
+      </div>
+      <div class="field"><label>Hora</label><input type="time" id="m2-plog-hora"></div>
+
+      <div class="subgroup-title">Service</div>
+      <div class="frow">
+        <div class="field"><label>Hombre</label><input type="number" id="m2-plog-svc-h" placeholder="0" min="0"></div>
+        <div class="field"><label>Mujer</label><input type="number" id="m2-plog-svc-m" placeholder="0" min="0"></div>
+      </div>
+
+      <div class="subgroup-title">Personal Esmeralda</div>
+      <div class="frow">
+        <div class="field"><label>Hombre</label><input type="number" id="m2-plog-esm-h" placeholder="0" min="0"></div>
+        <div class="field"><label>Mujer</label><input type="number" id="m2-plog-esm-m" placeholder="0" min="0"></div>
+      </div>
+
+      <div class="bgrp" style="margin-top:.5rem">
+        <button class="btn-p" id="m2-plog-btn" onclick="regPersonalLog()">Agregar registro →</button>
+      </div>
+    </div>
+
+    <div class="rs">
+      <p class="stitle">Actividades registradas</p>
+      <div class="date-nav" style="justify-content:flex-start">
+        <button class="btn-refresh" onclick="viewPrevDay()">‹</button>
+        <div class="date-nav-current"><span class="view-date-label"></span><input type="date" class="view-date-input" onchange="viewJumpDate(this.value)"></div>
+        <button class="btn-refresh view-date-next-btn" onclick="viewNextDay()">›</button>
+        <button class="btn-refresh" onclick="viewToday()">Hoy</button>
+      </div>
+      <div id="list-m2"><div class="empty"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Sin actividades registradas.<br><span style="font-size:12px">Cada registro genera un ID único disponible en el Módulo 3.</span></div></div>
+      <div style="margin-top:2rem">
+        <p class="stitle">Historial de personal</p>
+        <div class="latas-stats">
+          <div class="lstat"><div class="lstat-l">N° registros</div><div class="lstat-v" id="plog-count">0</div></div>
+          <div class="lstat"><div class="lstat-l">Personal actual</div><div class="lstat-v" id="plog-current">0</div></div>
+        </div>
+        <div id="list-plog"><div class="empty" style="padding:1.5rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>Selecciona una actividad.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MÓDULO 3 — COSTOS ═══════════ -->
+<div id="page-m3" class="page">
+  <div class="costos-layout">
+    <!-- Panel izquierdo: lista de actividades -->
+    <div class="costo-panel-l">
+      <p class="stitle">Resumen del costo del día</p>
+      <div class="resumen-costos-dia" id="m3-resumen-dia"><div class="dc-empty">Sin datos</div></div>
+
+      <div class="divider"></div>
+      <button class="collapsible-hdr" id="m3-costos-dia-hdr" onclick="toggleCostosDiaSection()">
+        <span class="stitle" style="margin:0">Costos del día</span>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <p style="font-size:12px;color:var(--muted);margin:-4px 0 .75rem;line-height:1.5">Personal, canastillas y combustible — se declaran una vez por día, no por actividad.</p>
+      <div id="m3-costos-dia-body" class="collapsible-body">
+        <div class="subgroup-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:0">
+          <span>Personal Esmeralda (participaron hoy)</span>
+          <button class="btn-add" style="width:26px;height:26px;font-size:15px" onclick="openEmpleadoModal()" title="Agregar empleado">+</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin:.4rem 0">
+          <input type="checkbox" id="pd-esm-all" onchange="toggleTodosPersonalDia(this.checked)" style="width:auto"> Marcar a todos
+        </label>
+        <div id="pd-esm-list" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px 12px;background:var(--white);margin-bottom:.75rem"></div>
+
+        <div class="subgroup-title">Personal Service</div>
+        <div class="frow">
+          <div class="field"><label>Hombres</label><input type="number" id="pd-svc-h" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+          <div class="field"><label>Mujeres</label><input type="number" id="pd-svc-m" placeholder="0" min="0" oninput="calcularPersonalDia()"></div>
+        </div>
+        <div class="frow">
+          <div class="field"><label>S/. por hora</label><input type="number" id="pd-svc-costo" placeholder="0.00" min="0" step="0.01" oninput="calcularPersonalDia()"></div>
+          <div class="field"><label>Horas del día</label><input type="number" id="pd-horas" placeholder="0" min="0" step="0.5" oninput="calcularPersonalDia()"></div>
+        </div>
+        <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total personal del día</span><span class="di-v" id="pd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
+        <div class="bgrp" style="margin-top:.75rem">
+          <button class="btn-p" id="pd-save-btn" onclick="guardarPersonalDia()">Guardar →</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="subgroup-title" style="margin-top:0">Costos fijos y generales del día</div>
+        <div class="field"><label>Cantidad de canastillas (S/.1.30 c/u)</label><input type="number" id="cd-canastillas" placeholder="0" min="0" step="1" oninput="calcularCostosDia()"></div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
+          <input type="checkbox" id="cd-combustible" onchange="calcularCostosDia()" style="width:auto">
+          <label style="margin:0">Combustible (S/.500 fijo del día)</label>
+        </div>
+        <div class="field"><label>Otros costos del día (S/.)</label><input type="number" id="cd-otros" placeholder="0.00" min="0" step="0.01" oninput="calcularCostosDia()"></div>
+        <div class="di-row" style="margin-top:4px"><span class="di-l" style="font-weight:600">Total costos fijos del día</span><span class="di-v" id="cd-total" style="font-weight:700;color:var(--b600)">S/. 0.00</span></div>
+        <div class="bgrp" style="margin-top:.75rem">
+          <button class="btn-p" id="cd-save-btn" onclick="guardarCostosDia()">Guardar →</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Actividades disponibles</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.6">Selecciona una actividad registrada en el Módulo 2. Los datos operativos se cargarán automáticamente — solo deberás ingresar los costos en soles.</p>
+      <div class="date-nav" style="justify-content:flex-start;margin-bottom:1.25rem">
+        <button class="btn-refresh" onclick="viewPrevDay()">‹</button>
+        <div class="date-nav-current"><span class="view-date-label"></span><input type="date" class="view-date-input" onchange="viewJumpDate(this.value)"></div>
+        <button class="btn-refresh view-date-next-btn" onclick="viewNextDay()">›</button>
+        <button class="btn-refresh" onclick="viewToday()">Hoy</button>
+      </div>
+      <div id="m3-actividades-list">
+        <div class="empty-costo">
+          <div class="empty-ico" style="margin:0 auto 12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          No hay actividades aún.<br>Registra procesos en el <strong>Módulo 2</strong> para costearlos aquí.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="stitle">Resumen de costos por actividad</p>
+      <div class="costos-summary" style="grid-template-columns:1fr">
+        <div class="ck"><div class="ck-l">S/. Total actividad</div><div class="ck-v" id="sum-total">0.00</div></div>
+      </div>
+    </div>
+
+    <!-- Panel derecho: detalle + inputs de costo -->
+    <div class="costo-panel-r" id="m3-detail-panel">
+      <div class="empty-costo" style="padding-top:4rem">
+        <div class="empty-ico" style="margin:0 auto 16px;width:56px;height:56px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <strong style="color:var(--b800);font-size:15px">Selecciona una actividad</strong><br>
+        Elige un proceso del panel izquierdo para<br>ingresar sus costos y ver el cálculo completo.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div id="page-m4" class="page">
+  <div class="dash">
+    <div class="refresh-bar">
+      <button class="btn-refresh" onclick="renderDash();renderProduccionPorNP()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.12-3.9"/></svg>
+        Actualizar
+      </button>
+    </div>
+
+    <div class="dg" style="margin-bottom:1.5rem">
+      <div class="dc" style="grid-column:1 / -1">
+        <div class="dc-hdr"><span class="dc-title">Producción por número de parte</span><span class="dc-badge" id="d-np-badge">0</span></div>
+        <div class="dc-body" id="d-np-body"><div class="dc-empty">Cargando...</div></div>
+      </div>
+    </div>
+
+    <div class="date-nav">
+      <button class="btn-refresh" onclick="dashPrevDay()">‹ Día anterior</button>
+      <div class="date-nav-current">
+        <span id="dash-date-label"></span>
+        <input type="date" id="dash-date-input" onchange="dashJumpDate(this.value)">
+      </div>
+      <button class="btn-refresh" id="dash-next-btn" onclick="dashNextDay()">Día siguiente ›</button>
+      <button class="btn-refresh" onclick="dashGoToday()">Hoy</button>
+    </div>
+
+    <p class="stitle">Línea de producción del día</p>
+    <div class="npd-linea" id="d-linea"></div>
+
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1">
+        <div class="dc-hdr"><span class="dc-title">Resumen de costos del día</span></div>
+        <div class="dc-body resumen-costos-dia" id="d-resumen-costos"><div class="dc-empty">Sin datos</div></div>
+      </div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-3">
+      <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="d-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
+      <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="d-merma">0</div><div class="kpi-s">kg generados</div></div>
+      <div class="kpi purple"><div class="kpi-l">Costo total</div><div class="kpi-v" id="d-costo">S/.0</div><div class="kpi-s">producción costeada</div></div>
+    </div>
+    <div class="dg4">
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Último lote</span><span class="dc-badge" id="d-lote-badge">—</span></div><div class="dc-body" id="d-lote-body"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Personal del turno</span><span class="dc-badge" id="d-pers-badge">0</span></div><div class="dc-body" id="d-pers-body"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Costo de máquina por actividad</span><span class="dc-badge" id="d-cost-badge">0/0</span></div><div class="dc-body" id="d-cost-body"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Resumen del día</span><span class="dc-badge" id="d-resumen-badge">0</span></div><div class="dc-body" id="d-resumen-body"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Línea de tiempo de actividades</span><span class="dc-badge" id="d-tl-badge">0</span></div><div class="dc-body" id="d-tl-body"><div class="dc-empty">Sin actividades este día</div></div></div>
+    </div>
+    <div class="dg">
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Merma por proceso</span></div><div class="dc-body" id="d-merma-body"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Rendimiento por proceso</span></div><div class="dc-body" id="d-pesos-body"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tendencia — últimos 7 días</span></div><div class="dc-body"><div style="height:220px"><canvas id="chart-trend"></canvas></div></div></div>
+    </div>
+    <div class="updated" id="d-updated"></div>
+  </div>
+</div>
+
+<!-- ═══════════ DETALLE DE PRODUCCIÓN POR NP ═══════════ -->
+<div id="page-np-detail" class="page">
+  <div class="dash">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <a href="#" onclick="volverAProduccion();return false;" class="npd-back">‹ Volver al Dashboard</a>
+      <button class="btn-refresh" onclick="actualizarDetalleNP()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.12-3.9"/></svg>
+        Actualizar
+      </button>
+    </div>
+
+    <div class="npd-header">
+      <div class="npd-title-row">
+        <div class="npd-title" id="npd-title"></div>
+        <span class="sbadge" id="npd-badge"></span>
+      </div>
+      <div class="npd-cliente" id="npd-cliente"></div>
+      <div class="npd-fechas" id="npd-fechas"></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="npd-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
+      <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="npd-merma">0</div><div class="kpi-s">kg generados</div></div>
+      <div class="kpi green"><div class="kpi-l">Cajas producidas</div><div class="kpi-v" id="npd-cajas">0</div><div class="kpi-s">total del NP</div></div>
+      <div class="kpi purple"><div class="kpi-l">Costo máquina</div><div class="kpi-v" id="npd-costo">S/.0</div><div class="kpi-s">no incluye personal/día</div></div>
+    </div>
+
+    <div class="dg">
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Rendimiento por operación</span></div><div class="dc-body" id="npd-operaciones"><div class="dc-empty">Sin datos</div></div></div>
+      <div class="dc"><div class="dc-hdr"><span class="dc-title">Cajas producidas por día</span></div><div class="dc-body" id="npd-cajas-dia"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tiempo por proceso</span></div><div class="dc-body" id="npd-tiempos"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <p class="stitle">Todas las actividades</p>
+      <div id="npd-timeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal-ov">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Agregar item</div>
+    <input type="text" id="modal-input" placeholder="">
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO NÚMERO DE PARTE -->
+<div class="modal-ov" id="np-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Nuevo número de parte</div>
+    <div class="field"><label>Número de parte</label><input type="text" id="np-nombre" placeholder="Ej: NP-0001..."></div>
+    <div class="field">
+      <label>Cliente</label>
+      <div class="sel-wrap">
+        <select id="np-cliente"><option value="">Seleccionar...</option></select>
+        <button class="btn-add" onclick="openModal('np-cliente','Agregar cliente','Ej: Pesquera del Norte...')">+</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeNpModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmNpModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GESTIONAR / ELIMINAR ITEMS DE CATÁLOGO -->
+<div class="modal-ov" id="manage-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Eliminar de <span id="manage-modal-title"></span></div>
+    <div class="manage-list" id="manage-modal-list"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeManageModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EQUIPO (agregar / editar) -->
+<div class="modal-ov" id="equipo-modal-ov">
+  <div class="modal">
+    <div class="modal-title" id="equipo-modal-title">Agregar equipo</div>
+    <div class="field"><label>Nombre del equipo</label><input type="text" id="equipo-nombre-input" placeholder="Ej: SELLADORA..."></div>
+    <div class="field"><label>Costo por hora (S/.)</label><input type="number" id="equipo-costo-input" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeEquipoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmEquipoModal()">Guardar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COSTO DE EMPLEADO ESMERALDA (desde Módulo 3) -->
+<div class="modal-ov" id="costo-empleado-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Costo por día — <span id="costo-empleado-nombre"></span></div>
+    <div class="field"><label>S/. por día</label><input type="number" id="costo-empleado-input" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeCostoEmpleadoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmCostoEmpleadoModal()">Guardar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPLEADO ESMERALDA -->
+<div class="modal-ov" id="empleado-modal-ov">
+  <div class="modal">
+    <div class="modal-title">Agregar empleado Esmeralda</div>
+    <div class="field"><label>Nombre</label><input type="text" id="empleado-nombre" placeholder="Ej: Luan Dañino"></div>
+    <div class="field"><label>Género</label>
+      <select id="empleado-genero"><option value="H">Hombre</option><option value="M">Mujer</option></select>
+    </div>
+    <div class="field"><label>Costo por día (S/.)</label><input type="number" id="empleado-costo" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeEmpleadoModal()">Cancelar</button>
+      <button class="btn-p" onclick="confirmEmpleadoModal()">Agregar →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script type="module" src="js/main.js"></script>
+<script type="module" src="js/exitGate.js"></script>
+</body>
+</html>
