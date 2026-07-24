@@ -41,3 +41,7 @@ Object.assign(window, {
   const a = new Date(), ds = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], ms = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   document.getElementById('hdr-date').textContent = `${ds[a.getDay()]} ${a.getDate()} ${ms[a.getMonth()]} ${a.getFullYear()}`;
 })();
+
+// Resumen es la pestaña activa por defecto — la cargamos al abrir la app,
+// no solo al hacer clic en su pestaña (que es como funcionan las demás).
+fetchResumen();
