@@ -312,3 +312,52 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .toast.show{opacity:1;transform:translateY(0)}
 .toast-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
 .toast.error .toast-dot{background:#dc2626}
+
+/* ── ACTIVIDADES (Gestión Conservas) ── */
+.tareas-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem}
+.tareas-filters{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.tareas-filters select{background:var(--white);color:var(--text);border:1.5px solid var(--g200);padding:7px 12px;border-radius:var(--rmd);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer}
+.tareas-view-toggle{display:flex;background:var(--g100);border-radius:999px;padding:3px;flex-shrink:0}
+.tv-btn{background:none;border:none;padding:6px 14px;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:var(--tr)}
+.tv-btn.active{background:var(--white);color:var(--b600);box-shadow:var(--sh-sm)}
+
+.tbl-wrap{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);overflow-x:auto;box-shadow:var(--sh-sm)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:11px 14px;border-bottom:1.5px solid var(--g200);white-space:nowrap}
+.tbl tbody td{padding:11px 14px;border-bottom:1px solid var(--g100);vertical-align:top}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover{background:var(--g50)}
+.tbl-main{font-weight:600;color:var(--b900)}
+.tbl-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.tbl-empty{color:var(--g400)}
+.tbl-atraso{color:#dc2626;font-weight:600}
+.tbl-actions{text-align:right;position:relative}
+
+.badge-estado{font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.badge-estado.pendiente{background:var(--g100);color:var(--muted)}
+.badge-estado.en_curso{background:var(--b50);color:var(--b600)}
+.badge-estado.esperando_terceros{background:var(--purple-bg);color:var(--purple)}
+.badge-estado.bloqueada{background:var(--red-bg);color:var(--red)}
+.badge-estado.completada{background:var(--green-bg);color:var(--green)}
+.badge-estado.cancelada{background:var(--g100);color:var(--g400)}
+.pbadge-prioridad.critica{background:var(--red);color:#fff}
+
+.tarea-menu{position:relative;display:inline-block}
+.tarea-menu-dd{right:0;left:auto}
+.tarea-menu-dd button{color:var(--text)}
+.tarea-menu-dd button:hover{background:var(--g50)}
+.tarea-menu-dd .tarea-menu-del{color:#dc2626}
+.tarea-menu-dd .tarea-menu-del:hover{background:var(--red-bg)}
+
+.kanban-board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.kanban-col{background:var(--g50);border-radius:var(--rlg);padding:10px;min-width:220px}
+.kanban-col-hdr{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--b800);padding:4px 6px 10px}
+.kanban-count{background:var(--white);color:var(--muted);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--g200)}
+.kanban-col-body{display:flex;flex-direction:column;gap:8px}
+.kanban-card{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rmd);padding:10px;cursor:pointer;transition:var(--tr)}
+.kanban-card:hover{border-color:var(--b200);box-shadow:var(--sh-sm)}
+.kanban-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.kanban-card-title{font-size:13px;font-weight:600;color:var(--b900);margin-bottom:4px}
+.kanban-card-proy{font-size:11px;color:var(--b600);margin-bottom:6px}
+.kanban-card-bottom{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.kanban-empty{font-size:12px;color:var(--g400);text-align:center;padding:1rem 0}

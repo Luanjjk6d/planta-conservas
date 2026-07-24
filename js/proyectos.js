@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { proyectosDB } from './state.js';
 import { esc, fF, toast, localDateStr } from './utils.js';
+import { contarTareasDeProyecto } from './tareas.js';
 
 const ESTADO_LABEL = { planificado: 'Planificado', en_curso: 'En curso', pausado: 'Pausado', completado: 'Completado' };
 const ESTADO_COLOR = { planificado: '#8FA3BE', en_curso: '#378ADD', pausado: '#E65100', completado: '#16a34a' };
@@ -96,6 +97,7 @@ export function renderProyectos() {
         <div class="proy-pct">${p.avance}%</div>
         <div class="proy-row-fecha">${p.fechaMeta ? 'Meta: ' + fF(p.fechaMeta) : 'Sin fecha meta'}</div>
         <div class="proy-actions">
+          <a href="#" onclick="irATareasDeProyecto(${p.id});return false;">${contarTareasDeProyecto(p.id)} tarea${contarTareasDeProyecto(p.id) !== 1 ? 's' : ''}</a>
           <a href="#" onclick="editProyecto(${p.id});return false;">Editar</a>
         </div>
       </div>
