@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient.js';
 import { equiposDB } from './state.js';
 import { toast } from './utils.js';
 import { refreshManageList } from './catalogManage.js';
-import { renderM3, refreshSelected } from './m3.js';
+import { renderM3 } from './m3.js';
 
 let editingId = null;
 
@@ -62,5 +62,5 @@ export async function confirmEquipoModal() {
   }
   closeEquipoModal();
   await refreshManageList();
-  if (document.getElementById('m3-actividades-list')) { renderM3(); refreshSelected(); }
+  if (document.getElementById('m3-actividades-list')) renderM3();
 }

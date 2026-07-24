@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient.js';
 import { actividadesDB, costosDB, personalLogDB, empleadosEsmeraldaDB, actividadEmpleadosDB } from './state.js';
 import { hn, tMin, mHM, esc, toast } from './utils.js';
 import { stL, sugerencias } from './constants.js';
-import { renderM3, refreshIfSelected } from './m3.js';
+import { renderM3 } from './m3.js';
 import { renderEmpleadoChecklist, getSelectedEmpleadoIds } from './empleados.js';
 import { viewDate } from './viewDate.js';
 
@@ -184,7 +184,7 @@ export async function guarM2() {
     actividadEmpleadosDB[idBeingEdited] = empleadosSeleccionados;
     stickyNp = np;
     rendM2(); limpM2(); toast(`Actividad actualizada — ID: ${data.codigo}`);
-    if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(idBeingEdited); }
+    if (document.getElementById('page-m3').classList.contains('active')) renderM3();
     return;
   }
 
@@ -313,7 +313,7 @@ export async function regPersonalLog() {
   document.getElementById('m2-plog-svc-h').value = '';
   document.getElementById('m2-plog-svc-m').value = '';
   rendPersonalLog(); rendM2(); toast('Registro de personal agregado');
-  if (document.getElementById('page-m3').classList.contains('active')) { renderM3(); refreshIfSelected(actId); }
+  if (document.getElementById('page-m3').classList.contains('active')) renderM3();
 }
 
 export function rendPersonalLog() {

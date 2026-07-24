@@ -10,12 +10,15 @@ import {
   guarM2, limpM2, rendM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
-import { renderM3, selectActividad, mapCosto, toggleCostosDiaSection } from './m3.js';
+import { renderM3, mapCosto, toggleCostosDiaSection } from './m3.js';
 import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 import { abrirDetalleNP, volverAProduccion, actualizarDetalleNP } from './npDetalle.js';
-import { calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia } from './costeoDia.js';
+import {
+  calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia,
+  abrirEditarCostoLegacy, closeCostoLegacyModal, confirmCostoLegacyModal,
+} from './costeoDia.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -26,10 +29,11 @@ Object.assign(window, {
   guarM2, limpM2, sugerirEquipo, calcTotalPersonal, editM2, eliminarActividad,
   regPersonalLog, rendPersonalLog,
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal,
-  renderM3, selectActividad, toggleCostosDiaSection,
+  renderM3, toggleCostosDiaSection,
   renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, renderProduccionPorNP,
   abrirDetalleNP, volverAProduccion, actualizarDetalleNP,
   calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia,
+  abrirEditarCostoLegacy, closeCostoLegacyModal, confirmCostoLegacyModal,
   viewPrevDay, viewNextDay, viewToday, viewJumpDate,
 });
 

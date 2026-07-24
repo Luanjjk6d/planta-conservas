@@ -126,8 +126,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .costos-layout{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 113px)}
 .costo-panel-l{padding:2rem;background:var(--white);border-right:1px solid var(--g200);overflow-y:auto}
 .costo-panel-r{padding:2rem;background:var(--g50);overflow-y:auto}
+.costo-panel-single{border-right:none;max-width:760px;margin:0 auto;width:100%;min-height:calc(100vh - 113px)}
 
-.act-selector{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);overflow:hidden;margin-bottom:10px;box-shadow:var(--sh-sm);cursor:pointer;transition:var(--tr)}
+.act-selector,.act-ref{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);overflow:hidden;margin-bottom:10px;box-shadow:var(--sh-sm);transition:var(--tr)}
+.act-selector{cursor:pointer}
 .act-selector:hover{border-color:var(--b400);box-shadow:var(--sh-md)}
 .act-selector.selected{border-color:var(--b600);box-shadow:0 0 0 3px rgba(24,95,165,.12)}
 .as-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(135deg,var(--b50),#EEF6FF);border-bottom:1px solid var(--g100)}

@@ -210,7 +210,7 @@ export async function renderResumenCostosDia(fecha) {
     <div class="di-row"><span class="di-l">Personal Esmeralda (día)</span><span class="di-v">${fmt(costoEsm)}</span></div>
     <div class="di-row"><span class="di-l">Personal Service (día)</span><span class="di-v">${fmt(costoSvc)}</span></div>
     <div class="di-row"><span class="di-l">Máquinas (horas × tarifa de equipo)</span><span class="di-v">${fmt(costoMaquinaTotal)}</span></div>
-    ${costoLegacyActividades ? `<div class="di-row"><span class="di-l">Costos de actividad (histórico)</span><span class="di-v">${fmt(costoLegacyActividades)}</span></div>` : ''}
+    ${costoLegacyActividades ? `<div class="di-row"><span class="di-l">Costos de actividad (histórico) <button class="link-edit" style="margin-left:6px" onclick="abrirEditarCostoLegacy('${fecha}')">Editar</button></span><span class="di-v">${fmt(costoLegacyActividades)}</span></div>` : ''}
     <div class="di-row"><span class="di-l">Otros costos del día</span><span class="di-v">${fmt(otrosCostosDia)}</span></div>
     <div class="di-row"><span class="di-l">Limpieza de canastillas</span><span class="di-v">${fmt(montoCanastillas)}</span></div>
     <div class="di-row"><span class="di-l">Combustible</span><span class="di-v">${fmt(montoCombustible)}</span></div>
@@ -219,4 +219,45 @@ export async function renderResumenCostosDia(fecha) {
     <div class="di-row"><span class="di-l" style="font-weight:600;color:var(--b800)">Costo por caja</span><span class="di-v" style="font-weight:700;color:#7c3aed">${cajasTotal > 0 ? fmt(costoPorCaja) : '—'}</span></div>`;
   targets.forEach(el => { el.innerHTML = html; });
   return { total, costoPorCaja, cajasTotal };
+}
+
+// ───────── EDITAR COSTOS DE ACTIVIDAD (HISTÓRICO) ─────────
+// Único remanente del costeo por actividad (de antes de que todo pasara a
+// costearse por día): montos ya guardados en la tabla "costos" que siguen
+// sumando al total del día. Se editan aquí, no por actividad.
+let legacyFechaActual = null;
+
+export function abrirEditarCostoLegacy(fecha) {
+  legacyFechaActual = fecha;
+  const dayActs = actividadesDB.filter(a => a.fecha === fecha && costosDB[a.id]?.total);
+  const el = document.getElementById('costo-legacy-list');
+  el.innerHTML = dayActs.map(a => `
+    <div class="field">
+      <label>${esc(a.id)} — ${esc(a.proc)}</label>
+      <input type="number" class="costo-legacy-input" data-codigo="${a.id}" value="${costosDB[a.id].total}" min="0" step="0.01">
+    </div>`).join('');
+  document.getElementById('costo-legacy-modal-ov').classList.add('open');
+}
+
+export function closeCostoLegacyModal() {
+  document.getElementById('costo-legacy-modal-ov').classList.remove('open');
+  legacyFechaActual = null;
+}
+
+export async function confirmCostoLegacyModal() {
+  const inputs = document.querySelectorAll('.costo-legacy-input');
+  for (const input of inputs) {
+    const codigo = input.dataset.codigo;
+    const nuevoMonto = parseFloat(input.value) || 0;
+    if (nuevoMonto === costosDB[codigo]?.total) continue;
+    const { error } = await supabase.from('costos').update({
+      costo_otros: nuevoMonto, total: nuevoMonto, updated_at: new Date().toISOString(),
+    }).eq('actividad_codigo', codigo);
+    if (error) { toast('Error al guardar ' + codigo + ': ' + error.message, true); return; }
+    costosDB[codigo] = { ...costosDB[codigo], costoOtros: nuevoMonto, total: nuevoMonto };
+  }
+  const fecha = legacyFechaActual;
+  closeCostoLegacyModal();
+  toast('Costos actualizados');
+  await renderResumenCostosDia(fecha);
 }
