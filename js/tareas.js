@@ -170,6 +170,36 @@ let menuAbiertoTareaId = null;
 export function toggleTareaMenu(id) {
   menuAbiertoTareaId = menuAbiertoTareaId === id ? null : id;
   renderTareas();
+  renderTareasEnFicha();
+}
+
+// Lista compacta embebida en la ficha de un proyecto.
+let fichaProyectoIdActual = null;
+export function renderTareasEnFicha(proyectoId = fichaProyectoIdActual) {
+  fichaProyectoIdActual = proyectoId;
+  const el = document.getElementById('ficha-tareas-body');
+  if (!el || proyectoId == null) return;
+  const data = tareasDB.filter(t => t.proyectoId === proyectoId);
+  if (!data.length) { el.innerHTML = '<div class="empty" style="padding:1.5rem">Sin actividades para este proyecto.</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Actividad</th><th>Responsable</th><th>Estado</th><th>Prioridad</th><th>Fecha límite</th><th></th></tr></thead>
+    <tbody>${data.map(t => {
+      const { atraso } = _rowMeta(t);
+      return `<tr>
+        <td><div class="tbl-main">${esc(t.nombre)}</div></td>
+        <td>${esc(t.responsable) || '<span class="tbl-empty">—</span>'}</td>
+        <td><span class="badge-estado ${t.estado}">${ESTADO_LABEL[t.estado]}</span></td>
+        <td><span class="pbadge-prioridad ${t.prioridad}">${PRIORIDAD_LABEL[t.prioridad]}</span></td>
+        <td>${t.fechaLimite ? fF(t.fechaLimite) + (atraso > 0 ? ` <span class="tbl-atraso">(${atraso}d)</span>` : '') : '<span class="tbl-empty">—</span>'}</td>
+        <td class="tbl-actions">
+          <div class="tarea-menu">
+            <button class="proy-menu-btn" onclick="toggleTareaMenu(${t.id})">⋯</button>
+            ${menuAbiertoTareaId === t.id ? _renderMenu(t) : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
 }
 
 function _renderMenu(t) {
@@ -204,7 +234,7 @@ function _renderKanban(data) {
 }
 
 // ───────── Modal crear/editar ─────────
-export function openTareaModal(id = null) {
+export function openTareaModal(id = null, proyectoPreset = null) {
   editingTareaId = id;
   const t = id ? tareasDB.find(x => x.id === id) : null;
   document.getElementById('tarea-modal-title').textContent = id ? 'Editar actividad' : 'Nueva actividad';
@@ -212,7 +242,7 @@ export function openTareaModal(id = null) {
   document.getElementById('ta-descripcion').value = t?.descripcion || '';
   const selProy = document.getElementById('ta-proyecto');
   selProy.innerHTML = '<option value="">Sin proyecto</option>' + proyectosDB.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
-  selProy.value = t?.proyectoId || '';
+  selProy.value = t?.proyectoId || proyectoPreset || '';
   document.getElementById('ta-responsable').value = t?.responsable || '';
   document.getElementById('ta-depende').value = t?.dependeDe || '';
   document.getElementById('ta-estado').value = t?.estado || 'pendiente';
@@ -263,6 +293,7 @@ export async function confirmTareaModal() {
   closeTareaModal();
   _poblarFiltros();
   renderTareas();
+  renderTareasEnFicha();
 }
 
 // ───────── Acciones rápidas ─────────
@@ -273,6 +304,7 @@ export async function marcarTareaEnCurso(id) {
   const idx = tareasDB.findIndex(t => t.id === id);
   if (idx !== -1) tareasDB[idx] = mapTarea(data);
   renderTareas();
+  renderTareasEnFicha();
   toast('Actividad en curso');
 }
 
@@ -305,6 +337,7 @@ export async function confirmCompletarTarea() {
   if (idx !== -1) tareasDB[idx] = mapTarea(data);
   closeCompletarTareaModal();
   renderTareas();
+  renderTareasEnFicha();
   toast('Actividad completada');
 }
 
@@ -312,9 +345,7 @@ export function abrirProyectoDeTarea(id) {
   const t = tareasDB.find(x => x.id === id);
   if (!t?.proyectoId) return;
   menuAbiertoTareaId = null;
-  const b = Array.from(document.querySelectorAll('.nb')).find(x => x.textContent.includes('Proyectos'));
-  window.showPage('proy', b);
-  window.fetchProyectos().then(() => window.editProyecto(t.proyectoId));
+  window.abrirFichaProyecto(t.proyectoId);
 }
 
 let deletingTareaId = null;
@@ -340,6 +371,7 @@ export async function confirmarEliminarTarea() {
   if (idx !== -1) tareasDB.splice(idx, 1);
   closeTareaConfirmDeleteModal();
   renderTareas();
+  renderTareasEnFicha();
   toast('Actividad eliminada');
 }
 

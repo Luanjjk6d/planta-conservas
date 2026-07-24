@@ -10,6 +10,11 @@ import {
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
 } from './tareas.js';
+import {
+  fetchReuniones, toggleReunionMenu, openReunionModal, closeReunionModal, confirmReunionModal,
+  eliminarReunion, closeReunionConfirmDeleteModal, confirmarEliminarReunion,
+} from './reuniones.js';
+import { abrirFichaProyecto, volverAProyectosDesdeFicha, abrirTareaEnFicha, abrirReunionEnFicha } from './proyectoDetalle.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -22,6 +27,9 @@ Object.assign(window, {
   openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
+  fetchReuniones, toggleReunionMenu, openReunionModal, closeReunionModal, confirmReunionModal,
+  eliminarReunion, closeReunionConfirmDeleteModal, confirmarEliminarReunion,
+  abrirFichaProyecto, volverAProyectosDesdeFicha, abrirTareaEnFicha, abrirReunionEnFicha,
 });
 
 // Header date

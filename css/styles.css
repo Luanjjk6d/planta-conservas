@@ -361,3 +361,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .kanban-card-proy{font-size:11px;color:var(--b600);margin-bottom:6px}
 .kanban-card-bottom{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .kanban-empty{font-size:12px;color:var(--g400);text-align:center;padding:1rem 0}
+
+.proy-name-link{cursor:pointer;transition:var(--tr)}
+.proy-name-link:hover{color:var(--b600);text-decoration:underline}
+
+/* ── FICHA DE PROYECTO ── */
+.ficha-volver{display:inline-block;font-size:12px;font-weight:500;color:var(--b600);margin-bottom:1rem;cursor:pointer}
+.ficha-volver:hover{text-decoration:underline}
+.ficha-header{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:20px;margin-bottom:1.5rem;box-shadow:var(--sh-sm)}
+.ficha-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.ficha-titulo{font-size:20px;font-weight:700;color:var(--b900);margin:8px 0 4px}
+.ficha-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding-top:14px;border-top:1px solid var(--g100)}
+@media (max-width:720px){.ficha-grid{grid-template-columns:1fr 1fr}}
+.ficha-seccion{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:16px 18px;margin-bottom:1.25rem;box-shadow:var(--sh-sm)}
+.ficha-seccion-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+/* ── REUNIONES ── */
+.reu-row{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh-sm);transition:var(--tr)}
+.reu-row:hover{border-color:var(--b200);box-shadow:var(--sh-md)}
+.reu-row-top{display:flex;align-items:center;gap:8px}
+.reu-asunto{font-size:14px;font-weight:600;color:var(--b900);flex:1;min-width:0}
+.reu-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.reu-detail{font-size:12px;color:var(--text);margin-top:6px;line-height:1.5}
+.badge-estado-reu{font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.badge-estado-reu.programada{background:var(--b50);color:var(--b600)}
+.badge-estado-reu.realizada{background:var(--green-bg);color:var(--green)}
+.badge-estado-reu.cancelada{background:var(--g100);color:var(--g400)}

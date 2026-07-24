@@ -2,6 +2,8 @@ import { supabase } from './supabaseClient.js';
 import { proyectosDB } from './state.js';
 import { esc, fF, toast, localDateStr } from './utils.js';
 import { contarTareasDeProyecto } from './tareas.js';
+import { contarReunionesDeProyecto } from './reuniones.js';
+import { refrescarFicha } from './proyectoDetalle.js';
 
 const ESTADO_LABEL = { planificado: 'Planificado', en_curso: 'En curso', pausado: 'Pausado', completado: 'Completado' };
 const ESTADO_COLOR = { planificado: '#8FA3BE', en_curso: '#378ADD', pausado: '#E65100', completado: '#16a34a' };
@@ -77,7 +79,7 @@ export function renderProyectos() {
       <div class="proy-row-top">
         <span class="pbadge ${p.estado}">${ESTADO_LABEL[p.estado]}</span>
         <span class="pbadge-prioridad ${p.prioridad}">${PRIORIDAD_LABEL[p.prioridad] || 'Media'}</span>
-        <div class="proy-name">${esc(p.nombre)}</div>
+        <div class="proy-name proy-name-link" onclick="abrirFichaProyecto(${p.id})">${esc(p.nombre)}</div>
         <div class="proy-menu">
           <button class="proy-menu-btn" onclick="toggleProyMenu(${p.id})" title="Más acciones">⋯</button>
           ${menuAbiertoId === p.id ? `<div class="proy-menu-dd"><button onclick="abrirConfirmEliminarProyecto(${p.id})">Eliminar</button></div>` : ''}
@@ -97,7 +99,7 @@ export function renderProyectos() {
         <div class="proy-pct">${p.avance}%</div>
         <div class="proy-row-fecha">${p.fechaMeta ? 'Meta: ' + fF(p.fechaMeta) : 'Sin fecha meta'}</div>
         <div class="proy-actions">
-          <a href="#" onclick="irATareasDeProyecto(${p.id});return false;">${contarTareasDeProyecto(p.id)} tarea${contarTareasDeProyecto(p.id) !== 1 ? 's' : ''}</a>
+          <a href="#" onclick="abrirFichaProyecto(${p.id});return false;">${contarTareasDeProyecto(p.id)} tarea${contarTareasDeProyecto(p.id) !== 1 ? 's' : ''} · ${contarReunionesDeProyecto(p.id)} reunión${contarReunionesDeProyecto(p.id) !== 1 ? 'es' : ''}</a>
           <a href="#" onclick="editProyecto(${p.id});return false;">Editar</a>
         </div>
       </div>
@@ -171,6 +173,7 @@ export async function confirmProyectoModal() {
   }
   closeProyectoModal();
   renderProyectos();
+  refrescarFicha();
 }
 
 // Eliminar — requiere confirmación explícita en un modal propio (no
