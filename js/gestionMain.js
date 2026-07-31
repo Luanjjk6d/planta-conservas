@@ -16,6 +16,7 @@ import {
 import { abrirFichaProyecto, volverAProyectosDesdeFicha, abrirTareaEnFicha, abrirReunionEnFicha } from './proyectoDetalle.js';
 import { fetchCalendario, calMesAnterior, calMesSiguiente, calHoy, seleccionarDiaCalendario, abrirEventoCalendario } from './calendario.js';
 import { fetchResumen, resumenIrA } from './resumen.js';
+import { fetchMapa, toggleMapaProyecto } from './mapa.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -32,6 +33,7 @@ Object.assign(window, {
   abrirFichaProyecto, volverAProyectosDesdeFicha, abrirTareaEnFicha, abrirReunionEnFicha,
   fetchCalendario, calMesAnterior, calMesSiguiente, calHoy, seleccionarDiaCalendario, abrirEventoCalendario,
   fetchResumen, resumenIrA,
+  fetchMapa, toggleMapaProyecto,
 });
 
 // Header date

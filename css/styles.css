@@ -421,3 +421,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .cal-evento .cal-dot{margin-top:5px;flex-shrink:0}
 .cal-evento-titulo{font-size:13px;font-weight:500;color:var(--text)}
 .cal-evento-tipo{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── Mapa (árbol Proyectos → Actividades/Reuniones) ── */
+.mapa-wrap{display:flex;flex-direction:column;gap:0;padding:6px 2px 2rem}
+.mapa-root-card{display:flex;align-items:center;gap:12px;background:var(--b600);color:var(--white);border-radius:var(--rlg);padding:14px 18px;box-shadow:var(--sh-md);width:fit-content;margin-bottom:22px}
+.mapa-root-ico{font-size:22px;line-height:1}
+.mapa-root-title{font-size:15px;font-weight:700}
+.mapa-root-sub{font-size:12px;color:var(--b50);margin-top:2px}
+.mapa-branches{display:flex;flex-direction:column;gap:14px;margin-left:22px;padding-left:22px;border-left:2px solid var(--g200)}
+.mapa-proy-branch{position:relative}
+.mapa-proy-branch::before{content:'';position:absolute;left:-22px;top:19px;width:22px;height:2px;background:var(--g200)}
+.mapa-proy-card{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--g200);border-left:4px solid var(--g400);border-radius:var(--rmd);padding:9px 12px;box-shadow:var(--sh-sm);width:fit-content;min-width:280px}
+.mapa-proy-card.en_curso{border-left-color:var(--b400)}
+.mapa-proy-card.pausado{border-left-color:var(--orange)}
+.mapa-proy-card.completado{border-left-color:var(--green)}
+.mapa-toggle{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:2px;flex-shrink:0}
+.mapa-proy-nombre{font-size:13.5px;font-weight:600;color:var(--b900);cursor:pointer;flex:1}
+.mapa-proy-nombre:hover{color:var(--b600);text-decoration:underline}
+.mapa-proy-count{font-size:11px;color:var(--muted);background:var(--g50);border-radius:999px;padding:2px 8px;flex-shrink:0}
+.mapa-add-btn{background:var(--b50);color:var(--b600);border:none;border-radius:999px;width:22px;height:22px;font-size:14px;line-height:1;cursor:pointer;flex-shrink:0;transition:var(--tr)}
+.mapa-add-btn:hover{background:var(--b100)}
+.mapa-proy-children{display:flex;flex-direction:column;gap:5px;margin:8px 0 0 18px;padding-left:18px;border-left:2px dashed var(--g200)}
+.mapa-leaf{position:relative;display:flex;align-items:center;gap:8px;background:var(--g50);border-radius:var(--rsm);padding:6px 10px;cursor:pointer;transition:var(--tr);width:fit-content;min-width:220px}
+.mapa-leaf:hover{background:var(--b50)}
+.mapa-leaf::before{content:'';position:absolute;left:-18px;top:13px;width:18px;height:2px;background:var(--g200)}
+.mapa-leaf-nombre{font-size:12.5px;color:var(--text)}
+.mapa-leaf-fecha{font-size:11px;color:var(--muted);margin-left:auto}
+.mapa-leaf-ico{font-size:12px}
+.mapa-leaf-empty{font-size:12px;color:var(--muted);padding:4px 0 0}
