@@ -5,3 +5,4 @@
 export const tareasDB = [];               // tabla: tareas — "Actividades" de Gestión (no confundir con actividades del MES)
 export const reunionesDB = [];            // tabla: reuniones
 export const acuerdosDB = [];             // tabla: acuerdos
+export const mapaNodosDB = [];            // tabla: mapa_nodos — notas rápidas anidables del Mapa
