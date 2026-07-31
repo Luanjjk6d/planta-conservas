@@ -5,8 +5,7 @@ import {
   renderProyectos,
 } from './proyectos.js';
 import {
-  fetchTareas, aplicarFiltrosTareas, cambiarVistaTareas, verTareasDeProyecto, irATareasDeProyecto,
-  openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
+  fetchTareas, openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
 } from './tareas.js';
@@ -25,8 +24,7 @@ Object.assign(window, {
   fetchProyectos, setProyectoFiltro, openProyectoModal, closeProyectoModal, confirmProyectoModal, editProyecto,
   toggleProyMenu, abrirConfirmEliminarProyecto, closeConfirmDeleteModal, confirmarEliminarProyectoModal,
   renderProyectos,
-  fetchTareas, aplicarFiltrosTareas, cambiarVistaTareas, verTareasDeProyecto, irATareasDeProyecto,
-  openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
+  fetchTareas, openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
   fetchReuniones, toggleReunionMenu, openReunionModal, closeReunionModal, confirmReunionModal,

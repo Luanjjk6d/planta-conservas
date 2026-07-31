@@ -18,7 +18,7 @@
     </div>
     <div>
       <div class="hdr-title">Gestión Conservas</div>
-      <div class="hdr-sub">Seguimiento de proyectos, actividades y decisiones</div>
+      <div class="hdr-sub">Seguimiento de proyectos, tareas y reuniones</div>
     </div>
   </div>
   <div class="hdr-r">
@@ -37,17 +37,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg>
     Proyectos
   </button>
-  <button class="nb" onclick="showPage('actividades',this);fetchProyectos().then(fetchTareas)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Actividades
-  </button>
   <button class="nb" onclick="showPage('reuniones',this);fetchProyectos().then(fetchReuniones)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     Reuniones y acuerdos
-  </button>
-  <button class="nb" onclick="showPage('riesgos',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    Riesgos y decisiones
   </button>
   <button class="nb" onclick="showPage('calendario',this);fetchCalendario()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -80,41 +72,6 @@
   </div>
 </div>
 
-<!-- ═══════════ ACTIVIDADES ═══════════ -->
-<div id="page-actividades" class="page">
-  <div class="dash">
-    <div class="tareas-toolbar">
-      <div class="tareas-filters">
-        <select id="tf-proyecto" onchange="aplicarFiltrosTareas()"><option value="todos">Todos los proyectos</option></select>
-        <select id="tf-responsable" onchange="aplicarFiltrosTareas()"><option value="todos">Todos los responsables</option></select>
-        <select id="tf-estado" onchange="aplicarFiltrosTareas()">
-          <option value="todos">Todos los estados</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="en_curso">En curso</option>
-          <option value="esperando_terceros">Esperando a terceros</option>
-          <option value="bloqueada">Bloqueada</option>
-          <option value="completada">Completada</option>
-          <option value="cancelada">Cancelada</option>
-        </select>
-        <select id="tf-prioridad" onchange="aplicarFiltrosTareas()">
-          <option value="todos">Toda prioridad</option>
-          <option value="baja">Baja</option>
-          <option value="media">Media</option>
-          <option value="alta">Alta</option>
-          <option value="critica">Crítica</option>
-        </select>
-      </div>
-      <div class="tareas-view-toggle">
-        <button class="tv-btn active" data-v="lista" onclick="cambiarVistaTareas('lista')">Lista</button>
-        <button class="tv-btn" data-v="kanban" onclick="cambiarVistaTareas('kanban')">Kanban</button>
-        <button class="tv-btn" data-v="mias" onclick="cambiarVistaTareas('mias')">Mis actividades</button>
-      </div>
-      <button class="btn-p" onclick="openTareaModal()">+ Nueva actividad</button>
-    </div>
-    <div id="tareas-body"><div class="empty" style="padding:2.5rem">Cargando...</div></div>
-  </div>
-</div>
-
 <!-- ═══════════ REUNIONES Y ACUERDOS ═══════════ -->
 <div id="page-reuniones" class="page">
   <div class="dash">
@@ -122,13 +79,6 @@
       <button class="btn-p" onclick="openReunionModal()">+ Nueva reunión</button>
     </div>
     <div id="reuniones-body"><div class="empty" style="padding:2.5rem">Cargando...</div></div>
-  </div>
-</div>
-
-<!-- ═══════════ RIESGOS Y DECISIONES ═══════════ -->
-<div id="page-riesgos" class="page">
-  <div class="dash">
-    <div class="empty" style="padding:3rem"><div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>Estructura inicial de Riesgos y decisiones — próximamente.</div>
   </div>
 </div>
 

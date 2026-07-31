@@ -1,6 +1,7 @@
-// Módulo "Actividades" de Gestión Conservas — internamente "tareas" para
-// no confundirse con la tabla "actividades" del MES (proceso de
-// producción, concepto distinto). Vive solo en gestion.html.
+// Actividades (tareas) de un proyecto de Gestión Conservas — internamente
+// "tareas" para no confundirse con la tabla "actividades" del MES (proceso
+// de producción, concepto distinto). Vive solo en gestion.html, embebidas
+// en la ficha de cada proyecto (no hay listado propio independiente).
 import { supabase } from './supabaseClient.js';
 import { tareasDB } from './gestionState.js';
 import { proyectosDB } from './state.js';
@@ -11,13 +12,9 @@ const ESTADO_LABEL = {
   bloqueada: 'Bloqueada', completada: 'Completada', cancelada: 'Cancelada',
 };
 const PRIORIDAD_LABEL = { baja: 'Baja', media: 'Media', alta: 'Alta', critica: 'Crítica' };
-const KANBAN_ESTADOS = ['pendiente', 'en_curso', 'esperando_terceros', 'bloqueada', 'completada'];
 
-let vista = 'lista'; // lista | kanban | mias
-let filtros = { proyecto: 'todos', responsable: 'todos', estado: 'todos', prioridad: 'todos' };
 let editingTareaId = null;
 let completingTareaId = null;
-let miNombre = localStorage.getItem('gestion_mi_nombre') || '';
 
 export function mapTarea(row) {
   return {
@@ -41,10 +38,6 @@ export function mapTarea(row) {
   };
 }
 
-function nombreProyecto(proyectoId) {
-  return proyectosDB.find(p => p.id === proyectoId)?.nombre || '';
-}
-
 function diasAtraso(t) {
   if (!t.fechaLimite || t.estado === 'completada' || t.estado === 'cancelada') return 0;
   const dias = Math.round((new Date(localDateStr() + 'T00:00:00') - new Date(t.fechaLimite + 'T00:00:00')) / 86400000);
@@ -52,85 +45,13 @@ function diasAtraso(t) {
 }
 
 export async function fetchTareas() {
-  const el = document.getElementById('tareas-body');
-  if (el) el.innerHTML = '<div class="empty" style="padding:2.5rem">Cargando...</div>';
   const { data, error } = await supabase.from('tareas').select('*').order('created_at', { ascending: false });
   if (error) {
     toast('Error al cargar actividades: ' + error.message, true);
-    if (el) el.innerHTML = '<div class="empty" style="padding:2.5rem">No se pudo cargar. Revisa la conexión.</div>';
     return;
   }
   tareasDB.length = 0;
   tareasDB.push(...data.map(mapTarea));
-  _poblarFiltros();
-  renderTareas();
-}
-
-function _poblarFiltros() {
-  const selProy = document.getElementById('tf-proyecto');
-  if (selProy) {
-    const actual = selProy.value;
-    selProy.innerHTML = '<option value="todos">Todos los proyectos</option>' +
-      proyectosDB.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
-    selProy.value = actual || 'todos';
-  }
-  const selResp = document.getElementById('tf-responsable');
-  if (selResp) {
-    const actual = selResp.value;
-    const responsables = [...new Set(tareasDB.map(t => t.responsable).filter(Boolean))].sort();
-    selResp.innerHTML = '<option value="todos">Todos los responsables</option>' +
-      responsables.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
-    selResp.value = actual || 'todos';
-  }
-}
-
-export function aplicarFiltrosTareas() {
-  filtros = {
-    proyecto: document.getElementById('tf-proyecto')?.value || 'todos',
-    responsable: document.getElementById('tf-responsable')?.value || 'todos',
-    estado: document.getElementById('tf-estado')?.value || 'todos',
-    prioridad: document.getElementById('tf-prioridad')?.value || 'todos',
-  };
-  renderTareas();
-}
-
-// Filtra una actividad de un proyecto específico — se usa desde la
-// tarjeta de Proyectos ("N tareas") para llegar directo a esa lista.
-export function verTareasDeProyecto(proyectoId) {
-  const selProy = document.getElementById('tf-proyecto');
-  if (selProy) selProy.value = String(proyectoId);
-  aplicarFiltrosTareas();
-}
-
-export function cambiarVistaTareas(v) {
-  vista = v;
-  document.querySelectorAll('.tv-btn').forEach(b => b.classList.toggle('active', b.dataset.v === v));
-  if (v === 'mias' && !miNombre) {
-    const nombre = prompt('¿Cuál es tu nombre? Se usa para filtrar "Mis actividades" (se guarda solo en este navegador).');
-    if (nombre) { miNombre = nombre.trim(); localStorage.setItem('gestion_mi_nombre', miNombre); }
-  }
-  renderTareas();
-}
-
-function _tareasFiltradas() {
-  let data = [...tareasDB];
-  if (vista === 'mias') {
-    data = data.filter(t => miNombre && t.responsable.toLowerCase() === miNombre.toLowerCase());
-  } else {
-    if (filtros.proyecto !== 'todos') data = data.filter(t => String(t.proyectoId) === filtros.proyecto);
-    if (filtros.responsable !== 'todos') data = data.filter(t => t.responsable === filtros.responsable);
-    if (filtros.estado !== 'todos') data = data.filter(t => t.estado === filtros.estado);
-    if (filtros.prioridad !== 'todos') data = data.filter(t => t.prioridad === filtros.prioridad);
-  }
-  return data;
-}
-
-export function renderTareas() {
-  const el = document.getElementById('tareas-body');
-  if (!el) return;
-  const data = _tareasFiltradas();
-  if (vista === 'kanban') { el.innerHTML = _renderKanban(data); return; }
-  el.innerHTML = _renderLista(data, vista === 'mias');
 }
 
 function _rowMeta(t) {
@@ -138,38 +59,9 @@ function _rowMeta(t) {
   return { atraso };
 }
 
-function _renderLista(data, esMias) {
-  if (!data.length) {
-    return `<div class="empty" style="padding:2.5rem">${esMias ? 'No tienes actividades asignadas.' : 'Sin actividades con estos filtros.'}</div>`;
-  }
-  const rows = data.map(t => {
-    const { atraso } = _rowMeta(t);
-    return `<tr>
-      <td><div class="tbl-main">${esc(t.nombre)}</div>${t.dependeDe ? `<div class="tbl-sub">Depende de: ${esc(t.dependeDe)}</div>` : ''}</td>
-      <td>${t.proyectoId ? esc(nombreProyecto(t.proyectoId)) : '<span class="tbl-empty">—</span>'}</td>
-      <td>${esc(t.responsable) || '<span class="tbl-empty">—</span>'}</td>
-      <td><span class="badge-estado ${t.estado}">${ESTADO_LABEL[t.estado]}</span></td>
-      <td><span class="pbadge-prioridad ${t.prioridad}">${PRIORIDAD_LABEL[t.prioridad]}</span></td>
-      <td>${t.fechaLimite ? fF(t.fechaLimite) : '<span class="tbl-empty">—</span>'}</td>
-      <td>${atraso > 0 ? `<span class="tbl-atraso">${atraso} día${atraso !== 1 ? 's' : ''}</span>` : '<span class="tbl-empty">—</span>'}</td>
-      <td class="tbl-actions">
-        <div class="tarea-menu">
-          <button class="proy-menu-btn" onclick="toggleTareaMenu(${t.id})">⋯</button>
-          ${menuAbiertoTareaId === t.id ? _renderMenu(t) : ''}
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-  return `<div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Actividad</th><th>Proyecto</th><th>Responsable</th><th>Estado</th><th>Prioridad</th><th>Fecha límite</th><th>Atraso</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table></div>`;
-}
-
 let menuAbiertoTareaId = null;
 export function toggleTareaMenu(id) {
   menuAbiertoTareaId = menuAbiertoTareaId === id ? null : id;
-  renderTareas();
   renderTareasEnFicha();
 }
 
@@ -210,27 +102,6 @@ function _renderMenu(t) {
     ${t.proyectoId ? `<button onclick="abrirProyectoDeTarea(${t.id})">Abrir proyecto</button>` : ''}
     <button class="tarea-menu-del" onclick="eliminarTarea(${t.id})">Eliminar</button>
   </div>`;
-}
-
-function _renderKanban(data) {
-  const cols = KANBAN_ESTADOS.map(estado => {
-    const items = data.filter(t => t.estado === estado);
-    return `<div class="kanban-col">
-      <div class="kanban-col-hdr"><span>${ESTADO_LABEL[estado]}</span><span class="kanban-count">${items.length}</span></div>
-      <div class="kanban-col-body">
-        ${items.length ? items.map(t => {
-          const { atraso } = _rowMeta(t);
-          return `<div class="kanban-card" onclick="openTareaModal(${t.id})">
-            <div class="kanban-card-top"><span class="pbadge-prioridad ${t.prioridad}">${PRIORIDAD_LABEL[t.prioridad]}</span>${atraso > 0 ? `<span class="tbl-atraso">${atraso}d atraso</span>` : ''}</div>
-            <div class="kanban-card-title">${esc(t.nombre)}</div>
-            ${t.proyectoId ? `<div class="kanban-card-proy">${esc(nombreProyecto(t.proyectoId))}</div>` : ''}
-            <div class="kanban-card-bottom"><span>${esc(t.responsable) || '—'}</span><span>${t.fechaLimite ? fF(t.fechaLimite) : '—'}</span></div>
-          </div>`;
-        }).join('') : '<div class="kanban-empty">Sin actividades</div>'}
-      </div>
-    </div>`;
-  }).join('');
-  return `<div class="kanban-board">${cols}</div>`;
 }
 
 // ───────── Modal crear/editar ─────────
@@ -291,8 +162,6 @@ export async function confirmTareaModal() {
     toast('Actividad creada');
   }
   closeTareaModal();
-  _poblarFiltros();
-  renderTareas();
   renderTareasEnFicha();
 }
 
@@ -303,7 +172,6 @@ export async function marcarTareaEnCurso(id) {
   if (error) { toast('Error: ' + error.message, true); return; }
   const idx = tareasDB.findIndex(t => t.id === id);
   if (idx !== -1) tareasDB[idx] = mapTarea(data);
-  renderTareas();
   renderTareasEnFicha();
   toast('Actividad en curso');
 }
@@ -336,7 +204,6 @@ export async function confirmCompletarTarea() {
   const idx = tareasDB.findIndex(t => t.id === completingTareaId);
   if (idx !== -1) tareasDB[idx] = mapTarea(data);
   closeCompletarTareaModal();
-  renderTareas();
   renderTareasEnFicha();
   toast('Actividad completada');
 }
@@ -370,20 +237,10 @@ export async function confirmarEliminarTarea() {
   const idx = tareasDB.findIndex(t => t.id === deletingTareaId);
   if (idx !== -1) tareasDB.splice(idx, 1);
   closeTareaConfirmDeleteModal();
-  renderTareas();
   renderTareasEnFicha();
   toast('Actividad eliminada');
 }
 
-// Contador para la tarjeta de Proyectos (Etapa 2: conectar con Proyectos)
 export function contarTareasDeProyecto(proyectoId) {
   return tareasDB.filter(t => t.proyectoId === proyectoId).length;
-}
-
-// Se llama desde la tarjeta de Proyectos ("N tareas") para saltar directo
-// a Actividades ya filtrado por ese proyecto.
-export function irATareasDeProyecto(proyectoId) {
-  const b = Array.from(document.querySelectorAll('.nb')).find(x => x.textContent.includes('Actividades'));
-  window.showPage('actividades', b);
-  fetchTareas().then(() => verTareasDeProyecto(proyectoId));
 }

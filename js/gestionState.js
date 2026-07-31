@@ -5,4 +5,3 @@
 export const tareasDB = [];               // tabla: tareas — "Actividades" de Gestión (no confundir con actividades del MES)
 export const reunionesDB = [];            // tabla: reuniones
 export const acuerdosDB = [];             // tabla: acuerdos
-export const riesgosDecisionesDB = [];    // tabla: riesgos_decisiones — { tipo: 'riesgo'|'problema'|'decision', ... }

@@ -13,11 +13,10 @@ export async function fetchResumen() {
 }
 
 export function resumenIrA(idModulo) {
-  const nombres = { proy: 'Proyectos', actividades: 'Actividades', reuniones: 'Reuniones y acuerdos' };
+  const nombres = { proy: 'Proyectos', reuniones: 'Reuniones y acuerdos' };
   const b = Array.from(document.querySelectorAll('.nb')).find(x => x.textContent.includes(nombres[idModulo]));
   window.showPage(idModulo, b);
   if (idModulo === 'proy') window.renderProyectos();
-  if (idModulo === 'actividades') window.renderTareas();
   if (idModulo === 'reuniones') window.renderReuniones();
 }
 
@@ -58,12 +57,12 @@ export function renderResumen() {
         <div class="kpi-v">${reunionesSemana.length}</div>
         <div class="kpi-s">próximos 7 días</div>
       </div>
-      <div class="kpi blue kpi-click" onclick="resumenIrA('actividades')">
+      <div class="kpi blue kpi-click" onclick="resumenIrA('proy')">
         <div class="kpi-l">Actividades pendientes</div>
         <div class="kpi-v">${tareasPendientes.length}</div>
         <div class="kpi-s">de ${tareasDB.length} en total</div>
       </div>
-      <div class="kpi red kpi-click" onclick="resumenIrA('actividades')">
+      <div class="kpi red kpi-click" onclick="resumenIrA('proy')">
         <div class="kpi-l">Actividades vencidas</div>
         <div class="kpi-v">${tareasVencidas.length}</div>
         <div class="kpi-s">fecha límite vencida</div>
