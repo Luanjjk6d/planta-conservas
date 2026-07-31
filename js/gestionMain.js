@@ -21,6 +21,7 @@ import {
   iniciarAgregarNodo, cancelarAgregarNodo, confirmarAgregarNodo,
   iniciarEditarNodo, cancelarEditarNodo, confirmarEditarNodo,
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
+  iniciarElegirColor, cancelarElegirColor, elegirColor,
 } from './mapaNodos.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
@@ -42,6 +43,7 @@ Object.assign(window, {
   iniciarAgregarNodo, cancelarAgregarNodo, confirmarAgregarNodo,
   iniciarEditarNodo, cancelarEditarNodo, confirmarEditarNodo,
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
+  iniciarElegirColor, cancelarElegirColor, elegirColor,
 });
 
 // Header date

@@ -5,6 +5,8 @@ import { supabase } from './supabaseClient.js';
 import { mapaNodosDB } from './gestionState.js';
 import { toast } from './utils.js';
 
+export const COLORES = ['blue', 'green', 'orange', 'red', 'purple', 'gray'];
+
 export function mapNodo(row) {
   return {
     id: row.id,
@@ -12,6 +14,7 @@ export function mapNodo(row) {
     proyectoId: row.proyecto_id,
     tareaPadreId: row.tarea_padre_id,
     nodoPadreId: row.nodo_padre_id,
+    color: row.color || null,
   };
 }
 
@@ -111,4 +114,25 @@ export async function confirmarEliminarNodo(id) {
   await fetchMapaNodos(); // el borrado en cascada puede llevarse notas hijas
   window.renderMapa();
   toast('Nota eliminada');
+}
+
+let eligiendoColorId = null;
+export function estaEligiendoColor(id) {
+  return eligiendoColorId === id;
+}
+export function iniciarElegirColor(id) {
+  eligiendoColorId = id;
+  window.renderMapa();
+}
+export function cancelarElegirColor() {
+  eligiendoColorId = null;
+  window.renderMapa();
+}
+export async function elegirColor(id, color) {
+  const { error } = await supabase.from('mapa_nodos').update({ color }).eq('id', id);
+  if (error) { toast('Error al guardar: ' + error.message, true); return; }
+  const n = mapaNodosDB.find(x => x.id === id);
+  if (n) n.color = color;
+  eligiendoColorId = null;
+  window.renderMapa();
 }

@@ -14,6 +14,7 @@ import { fetchReuniones } from './reuniones.js';
 import {
   fetchMapaNodos, nodosDeProyecto, nodosDeTarea, nodosDeNodo,
   estaAgregandoEn, estaEditandoNodo, estaConfirmandoEliminarNodo,
+  estaEligiendoColor, COLORES,
 } from './mapaNodos.js';
 
 const ESTADO_LABEL = { planificado: 'Planificado', en_curso: 'En curso', pausado: 'Pausado', completado: 'Completado' };
@@ -44,13 +45,23 @@ function _renderAgregarTrigger(tipo, id) {
   return `<button class="mapa-add-nota-btn" onclick="iniciarAgregarNodo('${tipo}',${id})">+ nota</button>`;
 }
 
+function _renderColorSwatch(nodo) {
+  const eligiendo = estaEligiendoColor(nodo.id);
+  const dot = `<button class="mapa-color-dot ${nodo.color ? 'mapa-color-' + nodo.color : 'mapa-color-vacio'}"
+    onclick="${eligiendo ? 'cancelarElegirColor()' : `iniciarElegirColor(${nodo.id})`}" title="Elegir color"></button>`;
+  if (!eligiendo) return dot;
+  const opciones = COLORES.map(c => `<button class="mapa-color-op mapa-color-${c}" onclick="elegirColor(${nodo.id},'${c}')" title="${c}"></button>`).join('');
+  return `${dot}<span class="mapa-color-picker">${opciones}<button class="mapa-color-op mapa-color-vacio" onclick="elegirColor(${nodo.id},null)" title="Sin color"></button></span>`;
+}
+
 function _renderNodoBranch(nodo) {
   const hijos = nodosDeNodo(nodo.id);
   const editando = estaEditandoNodo(nodo.id);
   const confirmandoDel = estaConfirmandoEliminarNodo(nodo.id);
   return `
     <div class="mapa-nodo-branch">
-      <div class="mapa-nodo">
+      <div class="mapa-nodo ${nodo.color ? 'mapa-nodo-color-' + nodo.color : ''}">
+        ${_renderColorSwatch(nodo)}
         ${editando
       ? `<input id="mapa-editar-input" class="mapa-inline-input" onkeydown="if(event.key==='Enter')confirmarEditarNodo(${nodo.id},this.value);if(event.key==='Escape')cancelarEditarNodo();">`
       : `<span class="mapa-nodo-texto" onclick="iniciarEditarNodo(${nodo.id})">${esc(nodo.texto)}</span>`}
