@@ -492,6 +492,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .pend-persona-count{font-size:11px;font-weight:600;color:var(--muted);background:var(--g50);border-radius:999px;padding:2px 8px}
 .pend-persona-add{background:var(--b50);color:var(--b600);border:none;border-radius:50%;width:20px;height:20px;font-size:14px;font-weight:700;line-height:1;cursor:pointer;margin-left:auto;flex-shrink:0;transition:var(--tr)}
 .pend-persona-add:hover{background:var(--b100)}
+.pend-persona-edit{background:none;border:none;color:var(--g400);font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0}
+.pend-persona-edit:hover{color:var(--b600)}
 .pend-persona-list{display:flex;flex-direction:column;gap:6px}
 .pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);transition:var(--tr)}
 .pend-item:hover{background:var(--b50)}

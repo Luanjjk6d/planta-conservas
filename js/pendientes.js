@@ -2,9 +2,10 @@
 // responsable, para ver de un vistazo qué le toca a cada quien sin entrar
 // proyecto por proyecto. No agrega tabla nueva: reutiliza "tareas", solo
 // que aquí también se pueden crear sin ligarlas a un proyecto ("General").
+import { supabase } from './supabaseClient.js';
 import { proyectosDB } from './state.js';
 import { tareasDB } from './gestionState.js';
-import { esc, fF } from './utils.js';
+import { esc, fF, toast } from './utils.js';
 import { fetchProyectos } from './proyectos.js';
 import { fetchTareas } from './tareas.js';
 
@@ -29,6 +30,46 @@ function _nombreProyecto(proyectoId) {
 
 export function agregarPendienteParaPersona(btn) {
   window.openTareaModal(null, null, btn.dataset.persona);
+}
+
+// Renombrar una persona corrige su nombre en TODAS sus tareas de una vez
+// (incluidas las que comparte con alguien más), sin tocar a los demás
+// responsables de esas tareas.
+let editandoPersona = null; // { clave, label }
+export function estaEditandoPersona(clave) {
+  return editandoPersona?.clave === clave;
+}
+export function iniciarEditarPersonaBtn(btn) {
+  editandoPersona = { clave: btn.dataset.clave, label: btn.dataset.label };
+  renderPendientes();
+  setTimeout(() => {
+    const el = document.getElementById('pend-persona-input');
+    if (!el) return;
+    el.value = editandoPersona.label;
+    el.focus();
+    el.select();
+  }, 50);
+}
+export function cancelarEditarPersona() {
+  editandoPersona = null;
+  renderPendientes();
+}
+export async function confirmarEditarPersona(nuevoNombre) {
+  if (!editandoPersona) return;
+  const { clave } = editandoPersona;
+  const limpio = (nuevoNombre || '').trim();
+  if (!limpio) { cancelarEditarPersona(); return; }
+
+  const afectadas = tareasDB.filter(t => _personasDe(t.responsable).some(p => p.toLowerCase() === clave));
+  for (const t of afectadas) {
+    const nuevoResponsable = _personasDe(t.responsable).map(p => p.toLowerCase() === clave ? limpio : p).join(', ');
+    const { error } = await supabase.from('tareas').update({ responsable: nuevoResponsable, updated_at: new Date().toISOString() }).eq('id', t.id);
+    if (error) { toast('Error al renombrar "' + t.nombre + '": ' + error.message, true); continue; }
+    t.responsable = nuevoResponsable;
+  }
+  editandoPersona = null;
+  toast('Nombre actualizado en ' + afectadas.length + ' pendiente' + (afectadas.length !== 1 ? 's' : ''));
+  renderPendientes();
 }
 
 export function renderPendientes() {
@@ -61,10 +102,14 @@ export function renderPendientes() {
     const { label, items: itemsSinOrdenar } = porPersona.get(clave);
     const items = [...itemsSinOrdenar].sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado]);
     const esSinResponsable = clave === '__sin_responsable__';
+    const editandoNombre = estaEditandoPersona(clave);
     return `
       <div class="pend-persona-card">
         <div class="pend-persona-hdr">
-          ${esc(label)}<span class="pend-persona-count">${items.length}</span>
+          ${editandoNombre
+        ? `<input id="pend-persona-input" class="mapa-inline-input" style="width:140px" onkeydown="if(event.key==='Enter')confirmarEditarPersona(this.value);if(event.key==='Escape')cancelarEditarPersona();">`
+        : `${esc(label)}${esSinResponsable ? '' : `<button class="pend-persona-edit" data-clave="${esc(clave)}" data-label="${esc(label)}" onclick="iniciarEditarPersonaBtn(this)" title="Editar nombre">✎</button>`}`}
+          <span class="pend-persona-count">${items.length}</span>
           ${esSinResponsable ? '' : `<button class="pend-persona-add" data-persona="${esc(label)}" onclick="agregarPendienteParaPersona(this)" title="Agregar pendiente para ${esc(label)}">+</button>`}
         </div>
         <div class="pend-persona-list">

@@ -24,7 +24,10 @@ import {
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
 } from './mapaNodos.js';
-import { fetchPendientes, renderPendientes, agregarPendienteParaPersona } from './pendientes.js';
+import {
+  fetchPendientes, renderPendientes, agregarPendienteParaPersona,
+  iniciarEditarPersonaBtn, cancelarEditarPersona, confirmarEditarPersona,
+} from './pendientes.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -48,6 +51,7 @@ Object.assign(window, {
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
   fetchPendientes, renderPendientes, agregarPendienteParaPersona,
+  iniciarEditarPersonaBtn, cancelarEditarPersona, confirmarEditarPersona,
 });
 
 // Header date
