@@ -27,6 +27,10 @@ function _nombreProyecto(proyectoId) {
   return proyectosDB.find(p => p.id === proyectoId)?.nombre || '';
 }
 
+export function agregarPendienteParaPersona(btn) {
+  window.openTareaModal(null, null, btn.dataset.persona);
+}
+
 export function renderPendientes() {
   const el = document.getElementById('pendientes-body');
   if (!el) return;
@@ -56,17 +60,28 @@ export function renderPendientes() {
   const grupos = claves.map(clave => {
     const { label, items: itemsSinOrdenar } = porPersona.get(clave);
     const items = [...itemsSinOrdenar].sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado]);
+    const esSinResponsable = clave === '__sin_responsable__';
     return `
       <div class="pend-persona-card">
-        <div class="pend-persona-hdr">${esc(label)}<span class="pend-persona-count">${items.length}</span></div>
+        <div class="pend-persona-hdr">
+          ${esc(label)}<span class="pend-persona-count">${items.length}</span>
+          ${esSinResponsable ? '' : `<button class="pend-persona-add" data-persona="${esc(label)}" onclick="agregarPendienteParaPersona(this)" title="Agregar pendiente para ${esc(label)}">+</button>`}
+        </div>
         <div class="pend-persona-list">
-          ${items.map(t => `
-            <div class="pend-item" onclick="openTareaModal(${t.id})">
+          ${items.map(t => {
+      const checked = t.estado === 'completada';
+      const compartidoCon = _personasDe(t.responsable).filter(p => p.toLowerCase() !== clave);
+      return `
+            <div class="pend-item ${checked ? 'completada' : ''}">
+              <button class="pend-check ${checked ? 'checked' : ''}" onclick="event.stopPropagation();togglePendienteCompletada(${t.id})" title="${checked ? 'Marcar como pendiente' : 'Marcar como hecho'}">✓</button>
               <span class="badge-estado ${t.estado}">${ESTADO_LABEL[t.estado]}</span>
-              <span class="pend-item-texto">${esc(t.nombre)}</span>
+              <span class="pend-item-texto" onclick="openTareaModal(${t.id})">${esc(t.nombre)}</span>
+              ${compartidoCon.length ? `<span class="pend-item-compartida">Con: ${esc(compartidoCon.join(', '))}</span>` : ''}
               <span class="pend-item-proy">${t.proyectoId ? esc(_nombreProyecto(t.proyectoId)) : 'General'}</span>
               ${t.fechaLimite ? `<span class="pend-item-fecha">${fF(t.fechaLimite)}</span>` : ''}
-            </div>`).join('')}
+              <button class="pend-item-edit" onclick="openTareaModal(${t.id})" title="Editar">✎</button>
+            </div>`;
+    }).join('')}
         </div>
       </div>`;
   }).join('');

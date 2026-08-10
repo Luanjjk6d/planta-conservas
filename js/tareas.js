@@ -105,7 +105,7 @@ function _renderMenu(t) {
 }
 
 // ───────── Modal crear/editar ─────────
-export function openTareaModal(id = null, proyectoPreset = null) {
+export function openTareaModal(id = null, proyectoPreset = null, responsablePreset = null) {
   editingTareaId = id;
   const t = id ? tareasDB.find(x => x.id === id) : null;
   document.getElementById('tarea-modal-title').textContent = id ? 'Editar actividad' : 'Nueva actividad';
@@ -114,7 +114,7 @@ export function openTareaModal(id = null, proyectoPreset = null) {
   const selProy = document.getElementById('ta-proyecto');
   selProy.innerHTML = '<option value="">Sin proyecto</option>' + proyectosDB.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
   selProy.value = t?.proyectoId || proyectoPreset || '';
-  document.getElementById('ta-responsable').value = t?.responsable || '';
+  document.getElementById('ta-responsable').value = t?.responsable || responsablePreset || '';
   document.getElementById('ta-depende').value = t?.dependeDe || '';
   document.getElementById('ta-estado').value = t?.estado || 'pendiente';
   document.getElementById('ta-prioridad').value = t?.prioridad || 'media';
@@ -163,6 +163,26 @@ export async function confirmTareaModal() {
   }
   closeTareaModal();
   renderTareasEnFicha();
+}
+
+// Check rápido para la vista Pendientes — marca/desmarca completada sin
+// pedir comentario ni evidencia (eso sigue disponible vía "Editar" si se
+// necesita). Reutiliza el mismo estado que ya usa toda la app.
+export async function togglePendienteCompletada(id) {
+  const t = tareasDB.find(x => x.id === id);
+  if (!t) return;
+  const nuevoEstado = t.estado === 'completada' ? 'pendiente' : 'completada';
+  const record = {
+    estado: nuevoEstado,
+    fecha_cierre: nuevoEstado === 'completada' ? localDateStr() : null,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await supabase.from('tareas').update(record).eq('id', id).select().single();
+  if (error) { toast('Error: ' + error.message, true); return; }
+  const idx = tareasDB.findIndex(x => x.id === id);
+  if (idx !== -1) tareasDB[idx] = mapTarea(data);
+  renderTareasEnFicha();
+  window.renderPendientes();
 }
 
 // ───────── Acciones rápidas ─────────

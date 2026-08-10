@@ -490,9 +490,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .pend-persona-card{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:14px;box-shadow:var(--sh-sm)}
 .pend-persona-hdr{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--b900);margin-bottom:10px}
 .pend-persona-count{font-size:11px;font-weight:600;color:var(--muted);background:var(--g50);border-radius:999px;padding:2px 8px}
+.pend-persona-add{background:var(--b50);color:var(--b600);border:none;border-radius:50%;width:20px;height:20px;font-size:14px;font-weight:700;line-height:1;cursor:pointer;margin-left:auto;flex-shrink:0;transition:var(--tr)}
+.pend-persona-add:hover{background:var(--b100)}
 .pend-persona-list{display:flex;flex-direction:column;gap:6px}
-.pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);cursor:pointer;transition:var(--tr)}
+.pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);transition:var(--tr)}
 .pend-item:hover{background:var(--b50)}
-.pend-item-texto{font-size:12.5px;color:var(--text);flex:1;min-width:120px}
+.pend-item.completada{background:var(--green-bg)}
+.pend-item.completada:hover{background:var(--green-bg)}
+.pend-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--g200);background:var(--white);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;font-size:11px;line-height:1;color:transparent;transition:var(--tr)}
+.pend-check:hover{border-color:var(--green)}
+.pend-check.checked{background:var(--green);border-color:var(--green);color:var(--white)}
+.pend-item-texto{font-size:12.5px;color:var(--text);flex:1;min-width:120px;cursor:pointer}
+.pend-item.completada .pend-item-texto{color:var(--muted);text-decoration:line-through}
+.pend-item-compartida{font-size:10px;color:var(--purple);background:var(--purple-bg);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .pend-item-proy{font-size:10.5px;color:var(--muted);background:var(--white);border:1px solid var(--g200);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .pend-item-fecha{font-size:11px;color:var(--muted);white-space:nowrap}
+.pend-item-edit{background:none;border:none;color:var(--g400);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0}
+.pend-item-edit:hover{color:var(--b600)}

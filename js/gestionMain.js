@@ -8,6 +8,7 @@ import {
   fetchTareas, openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
+  togglePendienteCompletada,
 } from './tareas.js';
 import {
   fetchReuniones, toggleReunionMenu, openReunionModal, closeReunionModal, confirmReunionModal,
@@ -23,7 +24,7 @@ import {
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
 } from './mapaNodos.js';
-import { fetchPendientes } from './pendientes.js';
+import { fetchPendientes, renderPendientes, agregarPendienteParaPersona } from './pendientes.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -35,6 +36,7 @@ Object.assign(window, {
   fetchTareas, openTareaModal, closeTareaModal, confirmTareaModal, toggleTareaMenu,
   marcarTareaEnCurso, abrirCompletarTarea, closeCompletarTareaModal, confirmCompletarTarea,
   abrirProyectoDeTarea, eliminarTarea, closeTareaConfirmDeleteModal, confirmarEliminarTarea,
+  togglePendienteCompletada,
   fetchReuniones, toggleReunionMenu, openReunionModal, closeReunionModal, confirmReunionModal,
   eliminarReunion, closeReunionConfirmDeleteModal, confirmarEliminarReunion,
   abrirFichaProyecto, volverAProyectosDesdeFicha, abrirTareaEnFicha, abrirReunionEnFicha,
@@ -45,7 +47,7 @@ Object.assign(window, {
   iniciarEditarNodo, cancelarEditarNodo, confirmarEditarNodo,
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
-  fetchPendientes,
+  fetchPendientes, renderPendientes, agregarPendienteParaPersona,
 });
 
 // Header date
