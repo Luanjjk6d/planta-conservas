@@ -23,6 +23,7 @@ import {
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
 } from './mapaNodos.js';
+import { fetchPendientes } from './pendientes.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
 // porque los módulos ES no las exponen globalmente por defecto.
@@ -44,6 +45,7 @@ Object.assign(window, {
   iniciarEditarNodo, cancelarEditarNodo, confirmarEditarNodo,
   pedirEliminarNodo, cancelarEliminarNodo, confirmarEliminarNodo,
   iniciarElegirColor, cancelarElegirColor, elegirColor,
+  fetchPendientes,
 });
 
 // Header date

@@ -483,3 +483,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .mapa-color-red{background:var(--red)}
 .mapa-color-purple{background:var(--purple)}
 .mapa-color-gray{background:var(--g400)}
+
+/* ── Pendientes (tareas agrupadas por responsable) ── */
+.pend-toolbar{display:flex;justify-content:flex-end;margin-bottom:1.25rem}
+.pend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.pend-persona-card{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:14px;box-shadow:var(--sh-sm)}
+.pend-persona-hdr{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--b900);margin-bottom:10px}
+.pend-persona-count{font-size:11px;font-weight:600;color:var(--muted);background:var(--g50);border-radius:999px;padding:2px 8px}
+.pend-persona-list{display:flex;flex-direction:column;gap:6px}
+.pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);cursor:pointer;transition:var(--tr)}
+.pend-item:hover{background:var(--b50)}
+.pend-item-texto{font-size:12.5px;color:var(--text);flex:1;min-width:120px}
+.pend-item-proy{font-size:10.5px;color:var(--muted);background:var(--white);border:1px solid var(--g200);border-radius:999px;padding:1px 7px;white-space:nowrap}
+.pend-item-fecha{font-size:11px;color:var(--muted);white-space:nowrap}
