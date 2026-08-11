@@ -104,6 +104,47 @@ export function agregarPendienteParaPersona(btn) {
   window.openTareaModal(null, null, btn.dataset.persona);
 }
 
+// Asignar/reasignar responsable directo desde la tarjeta, sin abrir el
+// formulario completo — sirve tanto para ponerle dueño a un pendiente
+// "Sin responsable" como para pasárselo a otra persona.
+let editandoResponsableId = null;
+export function estaEditandoResponsable(id) {
+  return editandoResponsableId === id;
+}
+export function iniciarEditarResponsable(id) {
+  editandoResponsableId = id;
+  renderPendientes();
+  setTimeout(() => {
+    const el = document.getElementById('pend-resp-input');
+    if (!el) return;
+    el.value = tareasDB.find(t => t.id === id)?.responsable || '';
+    el.focus();
+    el.select();
+  }, 50);
+}
+export function cancelarEditarResponsable() {
+  editandoResponsableId = null;
+  renderPendientes();
+}
+export async function confirmarEditarResponsable(id, nuevoResponsable) {
+  const limpio = (nuevoResponsable || '').trim();
+  const { error } = await supabase.from('tareas').update({ responsable: limpio || null, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, true); return; }
+  const t = tareasDB.find(x => x.id === id);
+  if (t) t.responsable = limpio;
+  editandoResponsableId = null;
+  renderPendientes();
+}
+
+function _renderResponsableEditor(t) {
+  const editando = estaEditandoResponsable(t.id);
+  const btn = `<button class="pend-item-resp" onclick="event.stopPropagation();${editando ? 'cancelarEditarResponsable()' : `iniciarEditarResponsable(${t.id})`}" title="Asignar responsable">👤</button>`;
+  if (!editando) return btn;
+  return `${btn}<input id="pend-resp-input" class="mapa-inline-input" style="width:150px" placeholder="Nombre(s), con coma si son varios"
+    onclick="event.stopPropagation()"
+    onkeydown="if(event.key==='Enter')confirmarEditarResponsable(${t.id},this.value);if(event.key==='Escape')cancelarEditarResponsable();">`;
+}
+
 // "Limpiar completadas" — borra de una sola vez todos los pendientes ya
 // hechos de una persona (si alguno es compartido, desaparece también de
 // la tarjeta de la otra persona, igual que cualquier otro borrado).
@@ -234,6 +275,7 @@ export function renderPendientes() {
               ${compartidoCon.length ? `<span class="pend-item-compartida">Con: ${esc(compartidoCon.join(', '))}</span>` : ''}
               <span class="pend-item-proy">${t.proyectoId ? esc(_nombreProyecto(t.proyectoId)) : 'General'}</span>
               ${t.fechaLimite ? `<span class="pend-item-fecha">${fF(t.fechaLimite)}</span>` : ''}
+              ${_renderResponsableEditor(t)}
               <button class="pend-item-edit" onclick="openTareaModal(${t.id})" title="Editar">✎</button>
               <button class="pend-item-del" onclick="eliminarTarea(${t.id})" title="Eliminar">🗑</button>
             </div>`;

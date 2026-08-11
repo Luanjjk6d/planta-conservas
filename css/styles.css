@@ -518,5 +518,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .pend-item-edit:hover{color:var(--b600)}
 .pend-item-del{background:none;border:none;color:var(--g400);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0}
 .pend-item-del:hover{color:var(--red)}
+.pend-item-resp{background:none;border:none;color:var(--g400);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0}
+.pend-item-resp:hover{color:var(--b600)}
 .pend-clear-btn{background:var(--g50);color:var(--muted);border:none;border-radius:999px;font-size:10.5px;font-weight:600;padding:2px 9px;cursor:pointer;flex-shrink:0;transition:var(--tr)}
 .pend-clear-btn:hover{background:var(--red-bg);color:var(--red)}
