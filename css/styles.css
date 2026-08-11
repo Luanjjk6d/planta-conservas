@@ -495,8 +495,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .pend-persona-edit{background:none;border:none;color:var(--g400);font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0}
 .pend-persona-edit:hover{color:var(--b600)}
 .pend-persona-list{display:flex;flex-direction:column;gap:6px}
-.pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);transition:var(--tr)}
+.pend-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:7px 9px;border-radius:var(--rsm);background:var(--g50);transition:var(--tr);cursor:grab}
 .pend-item:hover{background:var(--b50)}
+.pend-item.dragging{opacity:.4}
+.pend-item.color-blue{background:var(--b50)}
+.pend-item.color-green{background:var(--green-bg)}
+.pend-item.color-orange{background:var(--orange-bg)}
+.pend-item.color-red{background:var(--red-bg)}
+.pend-item.color-purple{background:var(--purple-bg)}
+.pend-item.color-gray{background:var(--g100)}
 .pend-item.completada{background:var(--green-bg)}
 .pend-item.completada:hover{background:var(--green-bg)}
 .pend-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--g200);background:var(--white);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;font-size:11px;line-height:1;color:transparent;transition:var(--tr)}

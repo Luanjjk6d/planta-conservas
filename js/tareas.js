@@ -34,6 +34,8 @@ export function mapTarea(row) {
     observaciones: row.observaciones || '',
     reunionOrigenId: row.reunion_origen_id,
     acuerdoOrigenId: row.acuerdo_origen_id,
+    orden: row.orden || 0,
+    color: row.color || null,
     updatedAt: row.updated_at,
   };
 }

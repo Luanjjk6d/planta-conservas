@@ -27,6 +27,8 @@ import {
 import {
   fetchPendientes, renderPendientes, agregarPendienteParaPersona,
   iniciarEditarPersonaBtn, cancelarEditarPersona, confirmarEditarPersona,
+  pendDragStart, pendDrop,
+  iniciarElegirColorPendiente, cancelarElegirColorPendiente, elegirColorPendiente,
 } from './pendientes.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
@@ -52,6 +54,8 @@ Object.assign(window, {
   iniciarElegirColor, cancelarElegirColor, elegirColor,
   fetchPendientes, renderPendientes, agregarPendienteParaPersona,
   iniciarEditarPersonaBtn, cancelarEditarPersona, confirmarEditarPersona,
+  pendDragStart, pendDrop,
+  iniciarElegirColorPendiente, cancelarElegirColorPendiente, elegirColorPendiente,
 });
 
 // Header date

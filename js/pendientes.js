@@ -14,6 +14,7 @@ const ESTADO_LABEL = {
   bloqueada: 'Bloqueada', completada: 'Completada', cancelada: 'Cancelada',
 };
 const ESTADO_RANK = { pendiente: 0, en_curso: 0, esperando_terceros: 0, bloqueada: 0, completada: 1, cancelada: 1 };
+const COLORES = ['blue', 'green', 'orange', 'red', 'purple', 'gray'];
 
 export async function fetchPendientes() {
   await Promise.all([fetchProyectos(), fetchTareas()]);
@@ -26,6 +27,77 @@ function _personasDe(responsable) {
 
 function _nombreProyecto(proyectoId) {
   return proyectosDB.find(p => p.id === proyectoId)?.nombre || '';
+}
+
+function _ordenarItems(items) {
+  return [...items].sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado] || (a.orden - b.orden));
+}
+
+function _itemsDePersona(clave) {
+  if (clave === '__sin_responsable__') return tareasDB.filter(t => !_personasDe(t.responsable).length);
+  return tareasDB.filter(t => _personasDe(t.responsable).some(p => p.toLowerCase() === clave));
+}
+
+// ───────── Arrastrar y soltar para reordenar ─────────
+// El orden se guarda en la propia tarea (columna "orden"), así que si un
+// pendiente es compartido, reordenarlo en la lista de una persona también
+// cambia su posición en la lista de la otra — igual que ya pasa con la
+// prioridad, que es del pendiente, no de la persona.
+let draggedTareaId = null;
+export function pendDragStart(id) {
+  draggedTareaId = id;
+}
+export async function pendDrop(event, targetId) {
+  event.preventDefault();
+  const clave = event.currentTarget.dataset.clave;
+  if (draggedTareaId == null || draggedTareaId === targetId) return;
+  const items = _ordenarItems(_itemsDePersona(clave));
+  const fromIdx = items.findIndex(t => t.id === draggedTareaId);
+  const toIdx = items.findIndex(t => t.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const [movido] = items.splice(fromIdx, 1);
+  items.splice(toIdx, 0, movido);
+  draggedTareaId = null;
+
+  await Promise.all(items.map(async (t, i) => {
+    const nuevoOrden = (i + 1) * 10;
+    if (t.orden === nuevoOrden) return;
+    const { error } = await supabase.from('tareas').update({ orden: nuevoOrden }).eq('id', t.id);
+    if (error) { toast('Error al reordenar: ' + error.message, true); return; }
+    t.orden = nuevoOrden;
+  }));
+  renderPendientes();
+}
+
+// ───────── Color de prioridad ─────────
+let eligiendoColorId = null;
+export function estaEligiendoColorPendiente(id) {
+  return eligiendoColorId === id;
+}
+export function iniciarElegirColorPendiente(id) {
+  eligiendoColorId = id;
+  renderPendientes();
+}
+export function cancelarElegirColorPendiente() {
+  eligiendoColorId = null;
+  renderPendientes();
+}
+export async function elegirColorPendiente(id, color) {
+  const { error } = await supabase.from('tareas').update({ color }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, true); return; }
+  const t = tareasDB.find(x => x.id === id);
+  if (t) t.color = color;
+  eligiendoColorId = null;
+  renderPendientes();
+}
+
+function _renderColorSwatch(t) {
+  const eligiendo = estaEligiendoColorPendiente(t.id);
+  const dot = `<button class="mapa-color-dot ${t.color ? 'mapa-color-' + t.color : 'mapa-color-vacio'}"
+    onclick="event.stopPropagation();${eligiendo ? 'cancelarElegirColorPendiente()' : `iniciarElegirColorPendiente(${t.id})`}" title="Color de prioridad"></button>`;
+  if (!eligiendo) return dot;
+  const opciones = COLORES.map(c => `<button class="mapa-color-op mapa-color-${c}" onclick="event.stopPropagation();elegirColorPendiente(${t.id},'${c}')" title="${c}"></button>`).join('');
+  return `${dot}<span class="mapa-color-picker">${opciones}<button class="mapa-color-op mapa-color-vacio" onclick="event.stopPropagation();elegirColorPendiente(${t.id},null)" title="Sin color"></button></span>`;
 }
 
 export function agregarPendienteParaPersona(btn) {
@@ -100,7 +172,7 @@ export function renderPendientes() {
 
   const grupos = claves.map(clave => {
     const { label, items: itemsSinOrdenar } = porPersona.get(clave);
-    const items = [...itemsSinOrdenar].sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado]);
+    const items = _ordenarItems(itemsSinOrdenar);
     const esSinResponsable = clave === '__sin_responsable__';
     const editandoNombre = estaEditandoPersona(clave);
     return `
@@ -117,8 +189,14 @@ export function renderPendientes() {
       const checked = t.estado === 'completada';
       const compartidoCon = _personasDe(t.responsable).filter(p => p.toLowerCase() !== clave);
       return `
-            <div class="pend-item ${checked ? 'completada' : ''}">
+            <div class="pend-item ${checked ? 'completada' : ''} ${t.color ? 'color-' + t.color : ''}"
+              draggable="true" data-clave="${esc(clave)}"
+              ondragstart="pendDragStart(${t.id});this.classList.add('dragging')"
+              ondragend="this.classList.remove('dragging')"
+              ondragover="event.preventDefault()"
+              ondrop="pendDrop(event,${t.id})">
               <button class="pend-check ${checked ? 'checked' : ''}" onclick="event.stopPropagation();togglePendienteCompletada(${t.id})" title="${checked ? 'Marcar como pendiente' : 'Marcar como hecho'}">✓</button>
+              ${_renderColorSwatch(t)}
               <span class="badge-estado ${t.estado}">${ESTADO_LABEL[t.estado]}</span>
               <span class="pend-item-texto" onclick="openTareaModal(${t.id})">${esc(t.nombre)}</span>
               ${compartidoCon.length ? `<span class="pend-item-compartida">Con: ${esc(compartidoCon.join(', '))}</span>` : ''}
