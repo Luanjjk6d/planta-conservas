@@ -260,6 +260,7 @@ export async function confirmarEliminarTarea() {
   if (idx !== -1) tareasDB.splice(idx, 1);
   closeTareaConfirmDeleteModal();
   renderTareasEnFicha();
+  window.renderPendientes();
   toast('Actividad eliminada');
 }
 

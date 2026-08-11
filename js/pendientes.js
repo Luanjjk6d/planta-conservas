@@ -104,6 +104,32 @@ export function agregarPendienteParaPersona(btn) {
   window.openTareaModal(null, null, btn.dataset.persona);
 }
 
+// "Limpiar completadas" — borra de una sola vez todos los pendientes ya
+// hechos de una persona (si alguno es compartido, desaparece también de
+// la tarjeta de la otra persona, igual que cualquier otro borrado).
+let confirmandoLimpiarClave = null;
+export function pedirLimpiarCompletadasBtn(btn) {
+  confirmandoLimpiarClave = btn.dataset.clave;
+  renderPendientes();
+}
+export function cancelarLimpiarCompletadas() {
+  confirmandoLimpiarClave = null;
+  renderPendientes();
+}
+export async function confirmarLimpiarCompletadas() {
+  if (!confirmandoLimpiarClave) return;
+  const completadas = _itemsDePersona(confirmandoLimpiarClave).filter(t => t.estado === 'completada');
+  await Promise.all(completadas.map(async t => {
+    const { error } = await supabase.from('tareas').delete().eq('id', t.id);
+    if (error) { toast('Error al eliminar "' + t.nombre + '": ' + error.message, true); return; }
+    const idx = tareasDB.findIndex(x => x.id === t.id);
+    if (idx !== -1) tareasDB.splice(idx, 1);
+  }));
+  confirmandoLimpiarClave = null;
+  toast(completadas.length + ' pendiente' + (completadas.length !== 1 ? 's' : '') + ' eliminada' + (completadas.length !== 1 ? 's' : ''));
+  renderPendientes();
+}
+
 // Renombrar una persona corrige su nombre en TODAS sus tareas de una vez
 // (incluidas las que comparte con alguien más), sin tocar a los demás
 // responsables de esas tareas.
@@ -175,6 +201,7 @@ export function renderPendientes() {
     const items = _ordenarItems(itemsSinOrdenar);
     const esSinResponsable = clave === '__sin_responsable__';
     const editandoNombre = estaEditandoPersona(clave);
+    const completadasCount = items.filter(t => t.estado === 'completada').length;
     return `
       <div class="pend-persona-card">
         <div class="pend-persona-hdr">
@@ -182,6 +209,11 @@ export function renderPendientes() {
         ? `<input id="pend-persona-input" class="mapa-inline-input" style="width:140px" onkeydown="if(event.key==='Enter')confirmarEditarPersona(this.value);if(event.key==='Escape')cancelarEditarPersona();">`
         : `${esc(label)}${esSinResponsable ? '' : `<button class="pend-persona-edit" data-clave="${esc(clave)}" data-label="${esc(label)}" onclick="iniciarEditarPersonaBtn(this)" title="Editar nombre">✎</button>`}`}
           <span class="pend-persona-count">${items.length}</span>
+          ${completadasCount > 0
+        ? (confirmandoLimpiarClave === clave
+          ? `<span class="mapa-nodo-confirm">¿Eliminar ${completadasCount} hecha${completadasCount !== 1 ? 's' : ''}? <button onclick="confirmarLimpiarCompletadas()">Sí</button><button onclick="cancelarLimpiarCompletadas()">No</button></span>`
+          : `<button class="pend-clear-btn" data-clave="${esc(clave)}" onclick="pedirLimpiarCompletadasBtn(this)" title="Eliminar las ${completadasCount} completadas">🗑 ${completadasCount}</button>`)
+        : ''}
           ${esSinResponsable ? '' : `<button class="pend-persona-add" data-persona="${esc(label)}" onclick="agregarPendienteParaPersona(this)" title="Agregar pendiente para ${esc(label)}">+</button>`}
         </div>
         <div class="pend-persona-list">
@@ -203,6 +235,7 @@ export function renderPendientes() {
               <span class="pend-item-proy">${t.proyectoId ? esc(_nombreProyecto(t.proyectoId)) : 'General'}</span>
               ${t.fechaLimite ? `<span class="pend-item-fecha">${fF(t.fechaLimite)}</span>` : ''}
               <button class="pend-item-edit" onclick="openTareaModal(${t.id})" title="Editar">✎</button>
+              <button class="pend-item-del" onclick="eliminarTarea(${t.id})" title="Eliminar">🗑</button>
             </div>`;
     }).join('')}
         </div>
