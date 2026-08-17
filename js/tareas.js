@@ -36,6 +36,7 @@ export function mapTarea(row) {
     acuerdoOrigenId: row.acuerdo_origen_id,
     orden: row.orden || 0,
     color: row.color || null,
+    semana: row.semana || null,
     updatedAt: row.updated_at,
   };
 }
@@ -122,6 +123,7 @@ export function openTareaModal(id = null, proyectoPreset = null, responsablePres
   document.getElementById('ta-prioridad').value = t?.prioridad || 'media';
   document.getElementById('ta-fecha-inicio').value = t?.fechaInicio || '';
   document.getElementById('ta-fecha-limite').value = t?.fechaLimite || '';
+  document.getElementById('ta-semana').value = t?.semana || '';
   document.getElementById('ta-observaciones').value = t?.observaciones || '';
   document.getElementById('tarea-modal-ov').classList.add('open');
   setTimeout(() => document.getElementById('ta-nombre').focus(), 100);
@@ -147,6 +149,7 @@ export async function confirmTareaModal() {
     prioridad: document.getElementById('ta-prioridad').value,
     fecha_inicio: document.getElementById('ta-fecha-inicio').value || null,
     fecha_limite: document.getElementById('ta-fecha-limite').value || null,
+    semana: document.getElementById('ta-semana').value.trim() || null,
     observaciones: document.getElementById('ta-observaciones').value.trim() || null,
     updated_at: new Date().toISOString(),
   };

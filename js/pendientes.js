@@ -33,9 +33,37 @@ function _ordenarItems(items) {
   return [...items].sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado] || (a.orden - b.orden));
 }
 
+// ───────── Separar por semana ─────────
+// "Semana" es una etiqueta de texto libre propia (columna semana en
+// tareas), independiente de fecha_inicio/fecha_limite — así, si alguien
+// edita la fecha de un pendiente puntual, no se desarma el agrupado por
+// tanda semanal. Un chip en cada ítem muestra su semana, y arriba hay
+// filtros para aislar una cuando varias tareas se repiten de una semana
+// a otra (mismo texto, otra fecha) y se quieren ver por separado.
+function _semanasDisponibles() {
+  const map = new Map(); // semana -> fechaInicio más antigua (para ordenar)
+  tareasDB.forEach(t => {
+    if (!t.semana) return;
+    if (!map.has(t.semana) || (t.fechaInicio && t.fechaInicio < map.get(t.semana))) map.set(t.semana, t.fechaInicio || map.get(t.semana) || '');
+  });
+  return [...map.entries()].sort((a, b) => (b[1] || '').localeCompare(a[1] || ''));
+}
+let filtroSemana = null; // null = todas
+export function setFiltroSemana(semana) {
+  filtroSemana = semana || null;
+  renderPendientes();
+}
+export function setFiltroSemanaBtn(btn) {
+  setFiltroSemana(btn.dataset.semana || null);
+}
+function _fuenteFiltrada() {
+  return filtroSemana ? tareasDB.filter(t => t.semana === filtroSemana) : tareasDB;
+}
+
 function _itemsDePersona(clave) {
-  if (clave === '__sin_responsable__') return tareasDB.filter(t => !_personasDe(t.responsable).length);
-  return tareasDB.filter(t => _personasDe(t.responsable).some(p => p.toLowerCase() === clave));
+  const fuente = _fuenteFiltrada();
+  if (clave === '__sin_responsable__') return fuente.filter(t => !_personasDe(t.responsable).length);
+  return fuente.filter(t => _personasDe(t.responsable).some(p => p.toLowerCase() === clave));
 }
 
 // ───────── Arrastrar y soltar para reordenar ─────────
@@ -217,23 +245,31 @@ export function renderPendientes() {
 
   // Agrupa sin distinguir mayúsculas/minúsculas (p.ej. "Luan" y "LUAN" son
   // la misma persona) — la etiqueta mostrada es la primera forma vista.
+  const fuente = _fuenteFiltrada();
   const porPersona = new Map(); // clave normalizada -> { label, items }
-  tareasDB.forEach(t => {
+  fuente.forEach(t => {
     _personasDe(t.responsable).forEach(persona => {
       const clave = persona.toLowerCase();
       if (!porPersona.has(clave)) porPersona.set(clave, { label: persona, items: [] });
       porPersona.get(clave).items.push(t);
     });
   });
-  const sinResponsable = tareasDB.filter(t => !_personasDe(t.responsable).length);
+  const sinResponsable = fuente.filter(t => !_personasDe(t.responsable).length);
   if (sinResponsable.length) porPersona.set('__sin_responsable__', { label: 'Sin responsable', items: sinResponsable });
 
   const claves = [...porPersona.keys()].sort((a, b) => porPersona.get(a).label.localeCompare(porPersona.get(b).label, 'es'));
 
-  const toolbar = `<div class="pend-toolbar"><button class="btn-p" onclick="openTareaModal()">+ Nuevo pendiente</button></div>`;
+  const semanas = _semanasDisponibles();
+  const pillsSemana = semanas.length > 1 ? `
+    <div class="pend-semanas">
+      <button class="pend-semana-pill ${!filtroSemana ? 'active' : ''}" onclick="setFiltroSemana(null)">Todas</button>
+      ${semanas.map(([nombre]) => `<button class="pend-semana-pill ${filtroSemana === nombre ? 'active' : ''}" data-semana="${esc(nombre)}" onclick="setFiltroSemanaBtn(this)">${esc(nombre)}</button>`).join('')}
+    </div>` : '';
+
+  const toolbar = `<div class="pend-toolbar">${pillsSemana}<button class="btn-p" onclick="openTareaModal()">+ Nuevo pendiente</button></div>`;
 
   if (!claves.length) {
-    el.innerHTML = toolbar + '<div class="empty" style="padding:2.5rem">Sin pendientes todavía. Usa "+ Nuevo pendiente" para agregar el primero.</div>';
+    el.innerHTML = toolbar + '<div class="empty" style="padding:2.5rem">Sin pendientes en esta vista. Usa "+ Nuevo pendiente" para agregar uno.</div>';
     return;
   }
 
@@ -274,7 +310,7 @@ export function renderPendientes() {
               <span class="pend-item-texto" onclick="openTareaModal(${t.id})">${esc(t.nombre)}</span>
               ${compartidoCon.length ? `<span class="pend-item-compartida">Con: ${esc(compartidoCon.join(', '))}</span>` : ''}
               <span class="pend-item-proy">${t.proyectoId ? esc(_nombreProyecto(t.proyectoId)) : 'General'}</span>
-              ${t.fechaLimite ? `<span class="pend-item-fecha">${fF(t.fechaLimite)}</span>` : ''}
+              ${t.semana ? `<span class="pend-item-semana">${esc(t.semana)}</span>` : ''}
               ${_renderResponsableEditor(t)}
               <button class="pend-item-edit" onclick="openTareaModal(${t.id})" title="Editar">✎</button>
               <button class="pend-item-del" onclick="eliminarTarea(${t.id})" title="Eliminar">🗑</button>

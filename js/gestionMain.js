@@ -31,6 +31,7 @@ import {
   iniciarElegirColorPendiente, cancelarElegirColorPendiente, elegirColorPendiente,
   pedirLimpiarCompletadasBtn, cancelarLimpiarCompletadas, confirmarLimpiarCompletadas,
   iniciarEditarResponsable, cancelarEditarResponsable, confirmarEditarResponsable,
+  setFiltroSemana, setFiltroSemanaBtn,
 } from './pendientes.js';
 
 // Funciones referenciadas desde onclick="" en el HTML — deben vivir en window
@@ -60,6 +61,7 @@ Object.assign(window, {
   iniciarElegirColorPendiente, cancelarElegirColorPendiente, elegirColorPendiente,
   pedirLimpiarCompletadasBtn, cancelarLimpiarCompletadas, confirmarLimpiarCompletadas,
   iniciarEditarResponsable, cancelarEditarResponsable, confirmarEditarResponsable,
+  setFiltroSemana, setFiltroSemanaBtn,
 });
 
 // Header date

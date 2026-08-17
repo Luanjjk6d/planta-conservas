@@ -485,7 +485,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .mapa-color-gray{background:var(--g400)}
 
 /* ── Pendientes (tareas agrupadas por responsable) ── */
-.pend-toolbar{display:flex;justify-content:flex-end;margin-bottom:1.25rem}
+.pend-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap}
+.pend-semanas{display:flex;gap:6px;flex-wrap:wrap}
+.pend-semana-pill{background:var(--g50);color:var(--muted);border:none;border-radius:999px;font-size:11.5px;font-weight:500;padding:5px 12px;cursor:pointer;transition:var(--tr)}
+.pend-semana-pill:hover{background:var(--b50);color:var(--b600)}
+.pend-semana-pill.active{background:var(--b600);color:var(--white);font-weight:600}
 .pend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
 .pend-persona-card{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rlg);padding:14px;box-shadow:var(--sh-sm)}
 .pend-persona-hdr{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--b900);margin-bottom:10px}
@@ -513,7 +517,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--text);mi
 .pend-item.completada .pend-item-texto{color:var(--muted);text-decoration:line-through}
 .pend-item-compartida{font-size:10px;color:var(--purple);background:var(--purple-bg);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .pend-item-proy{font-size:10.5px;color:var(--muted);background:var(--white);border:1px solid var(--g200);border-radius:999px;padding:1px 7px;white-space:nowrap}
-.pend-item-fecha{font-size:11px;color:var(--muted);white-space:nowrap}
+.pend-item-semana{font-size:10.5px;color:var(--muted);background:var(--white);border:1px solid var(--g200);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .pend-item-edit{background:none;border:none;color:var(--g400);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0}
 .pend-item-edit:hover{color:var(--b600)}
 .pend-item-del{background:none;border:none;color:var(--g400);font-size:12px;cursor:pointer;padding:0 2px;flex-shrink:0}
