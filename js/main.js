@@ -11,7 +11,7 @@ import {
   regPersonalLog, rendPersonalLog, initM2Listeners, mapActividad, mapPersonalLog,
 } from './m2.js';
 import { renderM3, mapCosto, toggleCostosDiaSection } from './m3.js';
-import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, dashAplicarFiltros, renderProduccionPorNP } from './dashboard.js';
+import { renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, dashAplicarFiltros, dashCambiarTendencia, renderProduccionPorNP } from './dashboard.js';
 import { fetchEmpleados, fetchActividadEmpleados, renderEmpleadoChecklist, openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal } from './empleados.js';
 import { viewPrevDay, viewNextDay, viewToday, viewJumpDate, onViewDateChanged, initViewDateNav } from './viewDate.js';
 import { abrirDetalleNP, volverAProduccion, actualizarDetalleNP } from './npDetalle.js';
@@ -30,7 +30,7 @@ Object.assign(window, {
   regPersonalLog, rendPersonalLog,
   openEmpleadoModal, closeEmpleadoModal, confirmEmpleadoModal, eliminarEmpleado, openCostoEmpleadoModal, closeCostoEmpleadoModal, confirmCostoEmpleadoModal,
   renderM3, toggleCostosDiaSection,
-  renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, dashAplicarFiltros, renderProduccionPorNP,
+  renderDash, dashPrevDay, dashNextDay, dashGoToday, dashJumpDate, dashAplicarFiltros, dashCambiarTendencia, renderProduccionPorNP,
   abrirDetalleNP, volverAProduccion, actualizarDetalleNP,
   calcularPersonalDia, guardarPersonalDia, calcularCostosDia, guardarCostosDia, toggleTodosPersonalDia,
   abrirEditarCostoLegacy, closeCostoLegacyModal, confirmCostoLegacyModal,

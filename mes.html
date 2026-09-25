@@ -367,12 +367,28 @@
     <div class="dg">
       <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Línea de tiempo de actividades</span><span class="dc-badge" id="d-tl-badge">0</span></div><div class="dc-body" id="d-tl-body"><div class="dc-empty">Sin actividades este día</div></div></div>
     </div>
+    <div class="dg" id="d-revisar-wrap" style="display:none">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Procesos a revisar</span><span class="dc-badge" id="d-revisar-badge">0</span></div><div class="dc-body" id="d-revisar-body"></div></div>
+    </div>
     <div class="dg">
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Merma por proceso</span></div><div class="dc-body" id="d-merma-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Rendimiento por proceso</span></div><div class="dc-body" id="d-pesos-body"><div class="dc-empty">Sin datos</div></div></div>
     </div>
     <div class="dg">
-      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Tendencia — últimos 7 días</span></div><div class="dc-body"><div style="height:220px"><canvas id="chart-trend"></canvas></div></div></div>
+      <div class="dc" style="grid-column:1 / -1">
+        <div class="dc-hdr">
+          <span class="dc-title">Tendencia</span>
+          <div class="dash-tendencia-controles">
+            <select id="dash-tendencia-combo" onchange="dashCambiarTendencia()"><option value="">Sin datos comparables</option></select>
+            <select id="dash-tendencia-metrica" onchange="dashCambiarTendencia()">
+              <option value="rendimiento">Rendimiento %</option>
+              <option value="kgH">kg/h</option>
+              <option value="kgHH">kg/HH</option>
+            </select>
+          </div>
+        </div>
+        <div class="dc-body"><div style="height:220px"><canvas id="chart-trend"></canvas></div></div>
+      </div>
     </div>
     <div class="updated" id="d-updated"></div>
   </div>

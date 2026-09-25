@@ -188,7 +188,7 @@ function _historicoComparable(producto, proceso, npExcluir) {
     .map(g => {
       const horas = g.durMin / 60;
       return {
-        fecha: g.fechaMax,
+        fecha: g.fechaMax, horas,
         rendimiento: g.ing > 0 ? g.sal / g.ing * 100 : null,
         kgH: horas > 0 ? g.sal / horas : null,
         kgHH: g.hh > 0 ? g.sal / g.hh : null,
@@ -216,6 +216,7 @@ function _realVsHistorico(act) {
   return [...porNpProc.values()].map(g => {
     const horas = g.durMin / 60;
     const hoy = {
+      horas,
       rendimiento: g.ing > 0 ? g.sal / g.ing * 100 : null,
       kgH: horas > 0 ? g.sal / horas : null,
       kgHH: g.hh > 0 ? g.sal / g.hh : null,
@@ -225,9 +226,67 @@ function _realVsHistorico(act) {
     const suficiente = historico.length >= 3;
     return {
       np: g.np, proc: g.proc, producto, hoy, nHistorico: historico.length, suficiente,
-      histProm: suficiente ? { rendimiento: _promedio(historico, 'rendimiento'), kgH: _promedio(historico, 'kgH'), kgHH: _promedio(historico, 'kgHH') } : null,
+      histProm: suficiente ? { rendimiento: _promedio(historico, 'rendimiento'), kgH: _promedio(historico, 'kgH'), kgHH: _promedio(historico, 'kgHH'), horas: _promedio(historico, 'horas') } : null,
     };
   });
+}
+
+// ───────── Procesos a revisar ─────────
+// Solo compara producto+proceso contra su propio histórico (nunca cruza
+// procesos ni productos distintos). Umbrales fijos, documentados aquí:
+const UMBRAL_KGH_BAJO = 0.85;    // kg/h actual < 85% del histórico
+const UMBRAL_RENDIMIENTO_PTS = 5; // rendimiento actual < histórico - 5 puntos
+const UMBRAL_DURACION_ALTA = 1.2; // duración actual > 120% del histórico
+const UMBRAL_GAP_MIN = 30;        // minutos entre el fin de un proceso y el inicio del siguiente
+
+function _gapsElevados(act, umbralMin = UMBRAL_GAP_MIN) {
+  const porNp = new Map();
+  act.forEach(a => { if (!porNp.has(a.np)) porNp.set(a.np, []); porNp.get(a.np).push(a); });
+  const out = [];
+  porNp.forEach((lista, np) => {
+    const ord = lista.slice().sort((a, b) => tMin(a.ini) - tMin(b.ini));
+    for (let i = 1; i < ord.length; i++) {
+      const prev = ord[i - 1], cur = ord[i];
+      if (prev.fin === '—') continue;
+      const gap = tMin(cur.ini) - tMin(prev.fin);
+      if (gap >= umbralMin) out.push({ np, desde: prev.proc, hasta: cur.proc, gap });
+    }
+  });
+  return out;
+}
+
+function _procesosARevisar(act, rvh) {
+  const hallazgos = [];
+  rvh.forEach(g => {
+    if (!g.suficiente) return;
+    if (g.hoy.kgH != null && g.histProm.kgH > 0 && g.hoy.kgH < g.histProm.kgH * UMBRAL_KGH_BAJO) {
+      hallazgos.push({ np: g.np, proc: g.proc, texto: 'Velocidad menor a producciones anteriores', detalle: `${g.hoy.kgH.toFixed(0)} kg/h vs. ${g.histProm.kgH.toFixed(0)} kg/h histórico (NP ${g.np})` });
+    }
+    if (g.hoy.rendimiento != null && g.histProm.rendimiento != null && g.hoy.rendimiento < g.histProm.rendimiento - UMBRAL_RENDIMIENTO_PTS) {
+      hallazgos.push({ np: g.np, proc: g.proc, texto: 'Rendimiento menor a producciones anteriores', detalle: `${g.hoy.rendimiento.toFixed(1)}% vs. ${g.histProm.rendimiento.toFixed(1)}% histórico (NP ${g.np})` });
+    }
+    if (g.hoy.horas > 0 && g.histProm.horas > 0 && g.hoy.horas > g.histProm.horas * UMBRAL_DURACION_ALTA) {
+      hallazgos.push({ np: g.np, proc: g.proc, texto: 'Duración mayor a producciones anteriores', detalle: `${mHM(g.hoy.horas * 60)} vs. ${mHM(g.histProm.horas * 60)} histórico (NP ${g.np})` });
+    }
+  });
+  _gapsElevados(act).forEach(gp => {
+    hallazgos.push({ np: gp.np, proc: gp.hasta, texto: 'Tiempo entre procesos elevado', detalle: `${mHM(gp.gap)} entre ${esc(gp.desde)} y ${esc(gp.hasta)} (NP ${gp.np})` });
+  });
+  return hallazgos;
+}
+
+function _renderProcesosARevisar(act, rvh) {
+  const wrap = document.getElementById('d-revisar-wrap');
+  const el = document.getElementById('d-revisar-body');
+  const hallazgos = _procesosARevisar(act, rvh);
+  if (!hallazgos.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('d-revisar-badge').textContent = hallazgos.length;
+  el.innerHTML = hallazgos.map(h => `
+    <div class="revisar-item">
+      <span class="revisar-ico">⚠</span>
+      <div><div class="revisar-txt">${esc(h.proc)} — ${h.texto}</div><div class="revisar-detalle">${h.detalle}</div></div>
+    </div>`).join('');
 }
 
 function _flechaVariacion(delta) {
@@ -247,9 +306,8 @@ function _rvhFila(label, hoyVal, histVal, unidad, esPuntos) {
   return `<div class="di-row"><span class="di-l">${label}</span><span class="di-v">${hoyVal.toFixed(1)}${unidad} <span style="color:var(--muted);font-weight:400">(hist. ${histVal.toFixed(1)}${unidad})</span> ${_flechaVariacion(delta)} ${deltaTxt}</span></div>`;
 }
 
-function _renderRealVsHistorico(act) {
+function _renderRealVsHistoricoLista(grupos) {
   const el = document.getElementById('d-rvh-body');
-  const grupos = _realVsHistorico(act);
   document.getElementById('d-rvh-badge').textContent = grupos.length;
   if (!grupos.length) { el.innerHTML = '<div class="dc-empty">Sin datos</div>'; return; }
   el.innerHTML = `<div class="dg">${grupos.map(g => `
@@ -266,6 +324,7 @@ function _renderRealVsHistorico(act) {
 
 function _renderTodo() {
   const { act, lotes } = _datosFiltrados();
+  ultimoActFiltrado = act;
 
   _renderLineaProduccionDia(act);
 
@@ -324,7 +383,9 @@ function _renderTodo() {
   const flujo = _flujoProduccion(act);
   _renderFlujoProduccion(flujo);
   _renderProductividad(flujo, act);
-  _renderRealVsHistorico(act);
+  const rvh = _realVsHistorico(act);
+  _renderRealVsHistoricoLista(rvh);
+  _renderProcesosARevisar(act, rvh);
   renderTimeline(act);
 
   // Merma por proceso
@@ -355,7 +416,7 @@ function _renderTodo() {
 
   document.getElementById('d-updated').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
 
-  renderTrendChart();
+  _renderTendenciaChart(act);
 }
 
 // Línea de producción del día — una estación por CADA actividad del día
@@ -383,50 +444,108 @@ function renderTimeline(act) {
   const el = document.getElementById('d-tl-body');
   document.getElementById('d-tl-badge').textContent = act.length;
   if (!act.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día</div>'; return; }
-  el.innerHTML = act.map(a => {
+  const ordenado = act.slice().sort((a, b) => tMin(a.ini) - tMin(b.ini));
+  const filas = [];
+  ordenado.forEach((a, i) => {
+    // Tiempo entre procesos — solo contra la actividad anterior DEL MISMO NP.
+    // No se asume parada ni pérdida, solo se informa el hueco.
+    const prevMismoNp = ordenado.slice(0, i).reverse().find(p => p.np === a.np);
+    if (prevMismoNp && prevMismoNp.fin !== '—') {
+      const gap = tMin(a.ini) - tMin(prevMismoNp.fin);
+      if (gap > 0) filas.push(`<div class="tl-gap">Tiempo entre procesos: ${mHM(gap)}</div>`);
+    }
     const start = tMin(a.ini);
     const end = a.fin !== '—' ? tMin(a.fin) : Math.min(1439, start + (a.durMin || 15));
     const left = (start / 1440 * 100).toFixed(2), width = Math.max(0.3, (end - start) / 1440 * 100).toFixed(2);
-    return `<div class="tl-row">
-      <div class="tl-label"><strong>${esc(a.proc)}</strong> · ${esc(a.equipo)}${a.batch ? ' · ' + esc(a.batch) : ''}<br>${a.ini} → ${a.fin}</div>
+    const kgH = a.durHoras > 0 && a.psal ? a.psal / a.durHoras : null;
+    filas.push(`<div class="tl-row">
+      <div class="tl-label"><strong>${esc(a.proc)}</strong> · ${esc(a.equipo)}${a.batch ? ' · ' + esc(a.batch) : ''}<br>${a.ini} → ${a.fin}${a.psal ? ' · ' + a.psal + ' kg' : ''}${kgH ? ' · ' + kgH.toFixed(0) + ' kg/h' : ''}</div>
       <div class="tl-track"><div class="tl-bar ${a.estado}" style="left:${left}%;width:${width}%"></div></div>
-    </div>`;
-  }).join('') + `<div class="tl-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>`;
+    </div>`);
+  });
+  el.innerHTML = filas.join('') + `<div class="tl-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>`;
 }
 
-async function renderTrendChart() {
-  const start = shiftDate(currentDashDate, -6);
-  const { data: actRows, error } = await supabase.from('actividades')
-    .select('fecha, peso_ingreso, peso_salida').gte('fecha', start).lte('fecha', currentDashDate);
-  if (error) return;
-  const days = Array.from({ length: 7 }, (_, i) => shiftDate(start, i));
-  const rendArr = [];
-  days.forEach(d => {
-    const rows = actRows.filter(r => r.fecha === d);
-    const ing = rows.reduce((s, r) => s + (parseFloat(r.peso_ingreso) || 0), 0);
-    const sal = rows.reduce((s, r) => s + (parseFloat(r.peso_salida) || 0), 0);
-    rendArr.push(ing > 0 ? +(sal / ing * 100).toFixed(1) : null);
+// ───────── Tendencia — últimas producciones comparables ─────────
+// Ya no es "últimos 7 días" (mezclaba productos/procesos distintos sin
+// avisar): ahora es una serie de las últimas producciones de un mismo
+// producto+proceso elegido, incluida la de hoy. Todo sale de
+// actividadesDB/m1Data ya cargados — sin consultas nuevas.
+function _combosDisponibles(act) {
+  const vistos = new Map();
+  act.forEach(a => {
+    const producto = _productoDeNp(a.np);
+    if (!producto) return;
+    const key = producto + '|' + a.proc;
+    if (!vistos.has(key)) vistos.set(key, { producto, proceso: a.proc });
   });
+  return [...vistos.values()];
+}
+
+function _seriePorCombo(producto, proceso) {
+  const porNp = new Map();
+  actividadesDB.forEach(a => {
+    if (a.proc !== proceso || _productoDeNp(a.np) !== producto) return;
+    if (!porNp.has(a.np)) porNp.set(a.np, { ing: 0, sal: 0, durMin: 0, hh: 0, fechaMax: a.fecha });
+    const g = porNp.get(a.np);
+    g.ing += a.ping || 0; g.sal += a.psal || 0; g.durMin += a.durMin || 0;
+    g.hh += (a.totalPersonal || 0) * (a.durHoras || 0);
+    if (a.fecha > g.fechaMax) g.fechaMax = a.fecha;
+  });
+  return [...porNp.entries()]
+    .map(([np, g]) => {
+      const horas = g.durMin / 60;
+      return {
+        np, fecha: g.fechaMax,
+        rendimiento: g.ing > 0 ? +(g.sal / g.ing * 100).toFixed(1) : null,
+        kgH: horas > 0 ? +(g.sal / horas).toFixed(1) : null,
+        kgHH: g.hh > 0 ? +(g.sal / g.hh).toFixed(1) : null,
+      };
+    })
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+const METRICA_LABEL = { rendimiento: 'Rendimiento %', kgH: 'kg/h', kgHH: 'kg/HH' };
+
+function _renderTendenciaChart(act) {
+  const selCombo = document.getElementById('dash-tendencia-combo');
+  const selMetrica = document.getElementById('dash-tendencia-metrica');
+  if (!selCombo) return;
+
+  const combos = _combosDisponibles(act);
+  const valorPrevio = selCombo.value;
+  selCombo.innerHTML = combos.length
+    ? combos.map(c => `<option value="${esc(c.producto)}|${esc(c.proceso)}">${esc(c.proceso)} — ${esc(c.producto)}</option>`).join('')
+    : '<option value="">Sin datos comparables</option>';
+  if (combos.some(c => `${c.producto}|${c.proceso}` === valorPrevio)) selCombo.value = valorPrevio;
 
   if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
+  if (!selCombo.value) return;
+
+  const [producto, proceso] = selCombo.value.split('|');
+  const metrica = selMetrica.value;
+  const serie = _seriePorCombo(producto, proceso).slice(-8);
+  const labels = serie.map(s => s.fecha === currentDashDate ? 'Hoy' : s.np);
+  const data = serie.map(s => s[metrica]);
+
   const ctx = document.getElementById('chart-trend').getContext('2d');
   chartTrend = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: days.map(d => d.slice(5)),
-      datasets: [
-        { label: 'Rendimiento %', data: rendArr, borderColor: '#16a34a', backgroundColor: '#16a34a', tension: .3, spanGaps: true },
-      ],
-    },
+    data: { labels, datasets: [{ label: METRICA_LABEL[metrica], data, borderColor: '#16a34a', backgroundColor: '#16a34a', tension: .3, spanGaps: true }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 11, padding: 10 } } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5A7FA8' } },
-        y: { title: { display: true, text: '%' }, ticks: { font: { size: 10 } } },
+        y: { title: { display: true, text: METRICA_LABEL[metrica] }, ticks: { font: { size: 10 } } },
       },
     },
   });
+}
+
+let ultimoActFiltrado = [];
+export function dashCambiarTendencia() {
+  _renderTendenciaChart(ultimoActFiltrado);
 }
 
 // ═══════════════════════════════
