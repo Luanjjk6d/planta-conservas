@@ -38,10 +38,6 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     Módulo 2 — Actividad en planta
   </button>
-  <button class="nb" onclick="showPage('m3',this);renderM3()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    Módulo 3 — Costos
-  </button>
   <button class="nb" onclick="showPage('m4',this);renderDash();renderProduccionPorNP()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Dashboard
@@ -339,26 +335,28 @@
       <button class="btn-refresh" onclick="dashGoToday()">Hoy</button>
     </div>
 
+    <div class="dash-filtros">
+      <select id="dash-f-np" onchange="dashAplicarFiltros()"><option value="">Todos los NP</option></select>
+      <select id="dash-f-prod" onchange="dashAplicarFiltros()"><option value="">Todos los productos</option></select>
+      <select id="dash-f-turno" onchange="dashAplicarFiltros()"><option value="">Todos los turnos</option></select>
+    </div>
+
     <p class="stitle">Línea de producción del día</p>
     <div class="npd-linea" id="d-linea"></div>
 
-    <div class="dg">
-      <div class="dc" style="grid-column:1 / -1">
-        <div class="dc-hdr"><span class="dc-title">Resumen de costos del día</span></div>
-        <div class="dc-body resumen-costos-dia" id="d-resumen-costos"><div class="dc-empty">Sin datos</div></div>
-      </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-l">Materia prima recibida</div><div class="kpi-v" id="d-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
+      <div class="kpi green"><div class="kpi-l">Última salida registrada</div><div class="kpi-v" id="d-ultima-salida">0</div><div class="kpi-s">kg · última etapa registrada</div></div>
+      <div class="kpi purple"><div class="kpi-l">Procesos registrados</div><div class="kpi-v" id="d-n-procesos">0</div><div class="kpi-s">actividades del día</div></div>
+      <div class="kpi orange"><div class="kpi-l">Tiempo registrado</div><div class="kpi-v" id="d-tiempo-reg">0h</div><div class="kpi-s">suma de duración</div></div>
     </div>
-
-    <div class="kpi-grid kpi-grid-3">
-      <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="d-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
-      <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="d-merma">0</div><div class="kpi-s">kg generados</div></div>
-      <div class="kpi purple"><div class="kpi-l">Costo total</div><div class="kpi-v" id="d-costo">S/.0</div><div class="kpi-s">producción costeada</div></div>
-    </div>
-    <div class="dg4">
+    <div class="dg3">
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Último lote</span><span class="dc-badge" id="d-lote-badge">—</span></div><div class="dc-body" id="d-lote-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Personal del turno</span><span class="dc-badge" id="d-pers-badge">0</span></div><div class="dc-body" id="d-pers-body"><div class="dc-empty">Sin datos</div></div></div>
-      <div class="dc"><div class="dc-hdr"><span class="dc-title">Costo de máquina por actividad</span><span class="dc-badge" id="d-cost-badge">0/0</span></div><div class="dc-body" id="d-cost-body"><div class="dc-empty">Sin datos</div></div></div>
       <div class="dc"><div class="dc-hdr"><span class="dc-title">Resumen del día</span><span class="dc-badge" id="d-resumen-badge">0</span></div><div class="dc-body" id="d-resumen-body"><div class="dc-empty">Sin datos</div></div></div>
+    </div>
+    <div class="dg">
+      <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Flujo de producción</span><span class="dc-badge" id="d-flujo-badge">0</span></div><div class="dc-body" id="d-flujo-body"><div class="dc-empty">Sin datos</div></div></div>
     </div>
     <div class="dg">
       <div class="dc" style="grid-column:1 / -1"><div class="dc-hdr"><span class="dc-title">Línea de tiempo de actividades</span><span class="dc-badge" id="d-tl-badge">0</span></div><div class="dc-body" id="d-tl-body"><div class="dc-empty">Sin actividades este día</div></div></div>
@@ -398,7 +396,7 @@
       <div class="kpi blue"><div class="kpi-l">Materia prima</div><div class="kpi-v" id="npd-mp">0</div><div class="kpi-s">kg recepcionados</div></div>
       <div class="kpi orange"><div class="kpi-l">Merma total</div><div class="kpi-v" id="npd-merma">0</div><div class="kpi-s">kg generados</div></div>
       <div class="kpi green"><div class="kpi-l">Cajas producidas</div><div class="kpi-v" id="npd-cajas">0</div><div class="kpi-s">total del NP</div></div>
-      <div class="kpi purple"><div class="kpi-l">Costo máquina</div><div class="kpi-v" id="npd-costo">S/.0</div><div class="kpi-s">no incluye personal/día</div></div>
+      <div class="kpi purple"><div class="kpi-l">Tiempo registrado</div><div class="kpi-v" id="npd-tiempo">0h</div><div class="kpi-s">suma de duración</div></div>
     </div>
 
     <div class="dg">

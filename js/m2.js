@@ -262,9 +262,6 @@ export function rendM2() {
     <div style="margin-top:8px;font-size:12px;color:var(--muted)">
       Esmeralda${(actividadEmpleadosDB[r.id] || []).length ? ': ' + (actividadEmpleadosDB[r.id] || []).map(e => esc(e.nombre)).join(', ') : ' — sin seleccionar'} &nbsp;|&nbsp; Service — H: ${r.svcH} · M: ${r.svcM} &nbsp;|&nbsp; Total: <strong style="color:var(--text)">${r.totalPersonal}</strong>
     </div>
-    <div style="margin-top:6px">
-      ${costosDB[r.id] ? '<span class="as-costed">Costeado</span>' : '<span class="as-uncosted">Sin costear</span>'}
-    </div>
   </div>`).join('');
   }
   initPersonalLogSelect();

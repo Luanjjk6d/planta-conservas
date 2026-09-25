@@ -6,12 +6,11 @@
 // falta ninguna consulta nueva a Supabase.
 import { supabase } from './supabaseClient.js';
 import { m1Data, actividadesDB, costosDB, numerosParteDB } from './state.js';
-import { esc, fmt, fF, mHM, toast, localDateStr } from './utils.js';
+import { esc, fF, mHM, toast, localDateStr } from './utils.js';
 import { stL } from './constants.js';
 import { mapLote } from './m1.js';
 import { mapActividad } from './m2.js';
 import { mapCosto } from './m3.js';
-import { costoMaquinaActividad } from './costeoDia.js';
 
 let currentNP = null;
 
@@ -65,7 +64,7 @@ function renderDetalleNP() {
   const mp = lotes.reduce((s, l) => s + (l.peso || 0), 0);
   const merma = acts.reduce((s, a) => s + (a.merma || 0), 0);
   const cajas = acts.reduce((s, a) => s + (a.cajas || 0), 0);
-  const costo = acts.reduce((s, a) => s + costoMaquinaActividad(a) + (costosDB[a.id]?.total || 0), 0);
+  const tiempoTotal = acts.reduce((s, a) => s + (a.durMin || 0), 0);
   const hoy = localDateStr();
   const dias = np ? Math.round((new Date((np.fechaCierre || hoy) + 'T00:00:00') - new Date(np.fechaApertura + 'T00:00:00')) / 86400000) + 1 : 0;
 
@@ -81,7 +80,7 @@ function renderDetalleNP() {
   document.getElementById('npd-mp').textContent = mp.toFixed(1);
   document.getElementById('npd-merma').textContent = merma.toFixed(1);
   document.getElementById('npd-cajas').textContent = cajas;
-  document.getElementById('npd-costo').textContent = fmt(costo);
+  document.getElementById('npd-tiempo').textContent = tiempoTotal ? mHM(tiempoTotal) : '0h';
 
   _renderRendimientoPorOperacion(acts);
   _renderCajasPorDia(acts);
@@ -143,6 +142,5 @@ function _renderTimeline(acts) {
     </div>
     ${a.ping || a.psal ? `<div class="pill"><strong>Ingreso:</strong> ${a.ping} kg → <strong>Salida:</strong> ${a.psal} kg${a.merma > 0 ? ' → <strong style="color:var(--orange)">Merma: ' + a.merma.toFixed(1) + ' kg</strong>' : ''}</div>` : ''}
     ${a.cajas != null ? `<div class="pill gr"><strong>Cajas:</strong> ${a.cajas}</div>` : ''}
-    <div style="margin-top:6px"><span class="as-costed">Máquina: ${fmt(costoMaquinaActividad(a) + (costosDB[a.id]?.total || 0))}</span></div>
   </div>`).join('');
 }

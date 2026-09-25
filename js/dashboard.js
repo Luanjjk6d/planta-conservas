@@ -1,14 +1,14 @@
 import { supabase } from './supabaseClient.js';
-import { esc, fmt, fF, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } from './utils.js';
+import { esc, fF, mHM, tMin, toast, localDateStr, shiftDate, fDateLong } from './utils.js';
 import { stL } from './constants.js';
 import { mapLote } from './m1.js';
 import { mapActividad } from './m2.js';
-import { m1Data, actividadesDB, costosDB, numerosParteDB, equiposDB } from './state.js';
-import { renderResumenCostosDia, costoMaquinaActividad } from './costeoDia.js';
+import { m1Data, actividadesDB, numerosParteDB } from './state.js';
 
 let chartTrend = null;
 let currentDashDate = localDateStr();
-let dashLotes = [], dashAct = [];
+let dashLotes = [], dashAct = []; // sin filtrar (todo el día)
+let filtroNp = '', filtroProd = '', filtroTurno = '';
 let produccionNP = [];
 
 async function fetchDashboardData(dateStr) {
@@ -39,22 +39,122 @@ export async function renderDash(dateStr = currentDashDate) {
   currentDashDate = dateStr;
   dashLotes = result.lotes; dashAct = result.act;
   updateDateNav();
-  _renderLineaProduccionDia();
-  const resumenDia = await renderResumenCostosDia(dateStr);
+  filtroNp = ''; filtroProd = ''; filtroTurno = '';
+  _poblarFiltros();
+  _renderTodo();
+}
 
-  const totMP = dashLotes.reduce((s, r) => s + r.peso, 0);
-  const totMerma = dashAct.reduce((s, r) => s + (r.merma || 0), 0);
+// ───────── Filtros (NP / Producto / Turno) ─────────
+// Se recalculan sobre lo ya cargado para ese día — sin consultas nuevas.
+function _poblarFiltros() {
+  const selNp = document.getElementById('dash-f-np');
+  const selProd = document.getElementById('dash-f-prod');
+  const selTurno = document.getElementById('dash-f-turno');
+  if (!selNp) return;
+  const nps = [...new Set(dashAct.map(a => a.np).filter(Boolean))].sort();
+  const prods = [...new Set(dashLotes.map(l => l.prod).filter(Boolean))].sort();
+  const turnos = [...new Set(dashLotes.map(l => l.turno).filter(Boolean))].sort();
+  selNp.innerHTML = '<option value="">Todos los NP</option>' + nps.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  selProd.innerHTML = '<option value="">Todos los productos</option>' + prods.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  selTurno.innerHTML = '<option value="">Todos los turnos</option>' + turnos.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+}
+
+function _datosFiltrados() {
+  let act = dashAct, lotes = dashLotes;
+  if (filtroNp) {
+    act = act.filter(a => a.np === filtroNp);
+    lotes = lotes.filter(l => l.np === filtroNp);
+  }
+  if (filtroProd) {
+    const nps = new Set(dashLotes.filter(l => l.prod === filtroProd).map(l => l.np));
+    act = act.filter(a => nps.has(a.np));
+    lotes = lotes.filter(l => l.prod === filtroProd);
+  }
+  if (filtroTurno) {
+    const nps = new Set(dashLotes.filter(l => l.turno === filtroTurno).map(l => l.np));
+    act = act.filter(a => nps.has(a.np));
+    lotes = lotes.filter(l => l.turno === filtroTurno);
+  }
+  return { act, lotes };
+}
+
+export function dashAplicarFiltros() {
+  filtroNp = document.getElementById('dash-f-np').value;
+  filtroProd = document.getElementById('dash-f-prod').value;
+  filtroTurno = document.getElementById('dash-f-turno').value;
+  _renderTodo();
+}
+
+// Última salida registrada — por NP, la salida de la actividad con la hora
+// más tardía (fin si existe, si no inicio). No asume que sea producto
+// terminado, solo la última etapa que se alcanzó a registrar ese NP ese día.
+function _ultimaSalidaRegistrada(act) {
+  const porNp = new Map();
+  act.forEach(a => {
+    const t = a.fin !== '—' ? tMin(a.fin) : tMin(a.ini);
+    const prev = porNp.get(a.np || '');
+    if (!prev || t >= prev.t) porNp.set(a.np || '', { t, psal: a.psal || 0 });
+  });
+  return [...porNp.values()].reduce((s, v) => s + v.psal, 0);
+}
+
+// Flujo de producción — agrupado por proceso (todas las actividades de ese
+// proceso ese día/filtro, sumadas). Rendimiento y velocidad se calculan
+// sobre los totales agrupados, no promediando porcentajes.
+function _flujoProduccion(act) {
+  const porProceso = new Map();
+  act.forEach(a => {
+    if (!porProceso.has(a.proc)) porProceso.set(a.proc, { ing: 0, sal: 0, durMin: 0, n: 0 });
+    const g = porProceso.get(a.proc);
+    g.ing += a.ping || 0; g.sal += a.psal || 0; g.durMin += a.durMin || 0; g.n++;
+  });
+  return [...porProceso.entries()].map(([proc, g]) => {
+    const merma = Math.max(0, g.ing - g.sal);
+    const rendimiento = g.ing > 0 ? (g.sal / g.ing * 100) : null;
+    const horas = g.durMin / 60;
+    const velocidad = horas > 0 ? (g.sal / horas) : null;
+    return { proc, ...g, merma, rendimiento, horas, velocidad };
+  });
+}
+
+function _renderFlujoProduccion(act) {
+  const el = document.getElementById('d-flujo-body');
+  const flujo = _flujoProduccion(act);
+  document.getElementById('d-flujo-badge').textContent = flujo.length;
+  if (!flujo.length) { el.innerHTML = '<div class="dc-empty">Sin datos</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Proceso</th><th>Ingreso kg</th><th>Salida kg</th><th>Merma kg</th><th>Rendimiento</th><th>Duración</th><th>Velocidad</th></tr></thead>
+    <tbody>${flujo.map(f => `<tr>
+      <td class="tbl-main">${esc(f.proc)}</td>
+      <td>${f.ing.toFixed(1)}</td>
+      <td>${f.sal.toFixed(1)}</td>
+      <td>${f.merma.toFixed(1)}</td>
+      <td>${f.rendimiento != null ? f.rendimiento.toFixed(1) + '%' : '<span class="tbl-empty">—</span>'}</td>
+      <td>${f.durMin ? mHM(f.durMin) : '<span class="tbl-empty">—</span>'}</td>
+      <td>${f.velocidad != null ? f.velocidad.toFixed(0) + ' kg/h' : '<span class="tbl-empty">—</span>'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function _renderTodo() {
+  const { act, lotes } = _datosFiltrados();
+
+  _renderLineaProduccionDia(act);
+
+  // Resumen del día — 4 indicadores, sin costos.
+  const totMP = lotes.reduce((s, r) => s + r.peso, 0);
   document.getElementById('d-mp').textContent = totMP.toFixed(1);
-  document.getElementById('d-merma').textContent = totMerma.toFixed(1);
-  document.getElementById('d-costo').textContent = fmt(resumenDia?.total || 0);
+  document.getElementById('d-ultima-salida').textContent = _ultimaSalidaRegistrada(act).toFixed(1);
+  document.getElementById('d-n-procesos').textContent = act.length;
+  const tiempoTotal = act.reduce((s, a) => s + (a.durMin || 0), 0);
+  document.getElementById('d-tiempo-reg').textContent = tiempoTotal ? mHM(tiempoTotal) : '0h';
 
   // Último lote — sigue al NP que se trabaja ese día, sin exigir que el lote
   // se haya registrado ese mismo día: un NP puede tardar varios días en
-  // cerrarse y seguir usando el lote con el que abrió (m1Data trae TODOS los
-  // lotes, no solo los del día, y ya viene ordenado del más reciente).
+  // cerrarse y seguir usando el lote con el que abrió.
   const lb = document.getElementById('d-lote-body'), lbadge = document.getElementById('d-lote-badge');
-  const npDelDia = dashAct[0]?.np;
-  const r = (npDelDia && m1Data.find(l => l.np === npDelDia)) || dashLotes[0];
+  const npDelDia = act[0]?.np;
+  const r = (npDelDia && m1Data.find(l => l.np === npDelDia)) || lotes[0];
   if (!r) { lb.innerHTML = '<div class="dc-empty">Sin datos</div>'; lbadge.textContent = '—'; }
   else {
     lbadge.textContent = r.np;
@@ -67,8 +167,8 @@ export async function renderDash(dateStr = currentDashDate) {
   }
 
   // Personal del turno
-  const totH = dashAct.reduce((s, r) => s + r.h, 0);
-  const totM = dashAct.reduce((s, r) => s + r.m, 0);
+  const totH = act.reduce((s, r) => s + r.h, 0);
+  const totM = act.reduce((s, r) => s + r.m, 0);
   const totP = totH + totM;
   const pb = document.getElementById('d-pers-body'); document.getElementById('d-pers-badge').textContent = totP;
   if (!totP) { pb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
@@ -80,39 +180,25 @@ export async function renderDash(dateStr = currentDashDate) {
     <div style="margin-top:10px;background:var(--g100);border-radius:999px;height:9px;overflow:hidden"><div style="height:100%;width:${p}%;background:linear-gradient(90deg,var(--b400),var(--b600));border-radius:999px"></div></div>`;
   }
 
-  // Costo de máquina por actividad — automático (horas × tarifa del equipo).
-  // El badge cuenta actividades con tarifa configurada, no "costeadas a mano"
-  // (ese paso manual ya no existe).
-  const conTarifa = dashAct.filter(a => equiposDB.some(e => e.nombre === a.equipo && e.costoHora > 0));
-  document.getElementById('d-cost-badge').textContent = `${conTarifa.length}/${dashAct.length}`;
-  const cb = document.getElementById('d-cost-body');
-  if (!dashAct.length) { cb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
-  else {
-    cb.innerHTML = dashAct.map(a => {
-      const eq = equiposDB.find(e => e.nombre === a.equipo);
-      const sinTarifa = !eq || !eq.costoHora;
-      return `<div class="di-row"><span class="di-l" style="font-size:11px">${esc(a.proc)}${a.batch ? ' · ' + esc(a.batch) : ''}</span><span class="di-v" style="font-size:11px${sinTarifa ? ';color:var(--orange)' : ''}">${sinTarifa ? 'Sin tarifa de equipo' : fmt(costoMaquinaActividad(a))}</span></div>`;
-    }).join('');
-  }
-
-  // Resumen del día
+  // Resumen del día — n° de procesos + tiempo por estado
   const porEstado = { op: 0, det: 0, fin: 0 };
-  dashAct.forEach(a => { porEstado[a.estado] = (porEstado[a.estado] || 0) + (a.durMin || 0); });
-  document.getElementById('d-resumen-badge').textContent = dashAct.length;
+  act.forEach(a => { porEstado[a.estado] = (porEstado[a.estado] || 0) + (a.durMin || 0); });
+  document.getElementById('d-resumen-badge').textContent = act.length;
   const rb = document.getElementById('d-resumen-body');
-  if (!dashAct.length) { rb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
+  if (!act.length) { rb.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
-    rb.innerHTML = `<div class="di-row"><span class="di-l">N° de procesos</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b800)">${dashAct.length}</span></div>
+    rb.innerHTML = `<div class="di-row"><span class="di-l">N° de procesos</span><span class="di-v" style="font-size:16px;font-weight:700;color:var(--b800)">${act.length}</span></div>
     <div class="di-row"><span class="di-l">Tiempo en operación</span><span class="di-v" style="color:var(--green)">${mHM(porEstado.op)}</span></div>
     <div class="di-row"><span class="di-l">Tiempo detenido</span><span class="di-v" style="color:var(--orange)">${mHM(porEstado.det)}</span></div>
     <div class="di-row"><span class="di-l">Tiempo finalizado</span><span class="di-v">${mHM(porEstado.fin)}</span></div>`;
   }
 
-  renderTimeline();
+  _renderFlujoProduccion(act);
+  renderTimeline(act);
 
   // Merma por proceso
   const mb2 = document.getElementById('d-merma-body');
-  const cm = dashAct.filter(r => r.merma > 0);
+  const cm = act.filter(r => r.merma > 0);
   if (!cm.length) { mb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
     const mx = Math.max(...cm.map(r => r.merma));
@@ -123,7 +209,7 @@ export async function renderDash(dateStr = currentDashDate) {
   // mezclaría pasos sin merma, ej. Descarga 20→20, con pasos que sí pierden
   // peso, e infla el % global de forma engañosa).
   const pb2 = document.getElementById('d-pesos-body');
-  const rendActs = dashAct.filter(r => r.ping > 0);
+  const rendActs = act.filter(r => r.ping > 0);
   if (!rendActs.length) { pb2.innerHTML = '<div class="dc-empty">Sin datos</div>'; }
   else {
     pb2.innerHTML = rendActs.map(r => {
@@ -138,18 +224,18 @@ export async function renderDash(dateStr = currentDashDate) {
 
   document.getElementById('d-updated').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
 
-  await renderTrendChart();
+  renderTrendChart();
 }
 
 // Línea de producción del día — una estación por CADA actividad del día
 // (no agrupada por proceso, a diferencia de otras vistas) para que se vea
 // todo lo que pasó, en orden. Puede haber actividades de más de un NP el
 // mismo día — por eso cada estación aclara a cuál pertenece.
-function _renderLineaProduccionDia() {
+function _renderLineaProduccionDia(act) {
   const el = document.getElementById('d-linea');
   if (!el) return;
-  if (!dashAct.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día.</div>'; return; }
-  const ordenado = dashAct.slice().sort((a, b) => tMin(a.ini) - tMin(b.ini));
+  if (!act.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día.</div>'; return; }
+  const ordenado = act.slice().sort((a, b) => tMin(a.ini) - tMin(b.ini));
   el.innerHTML = ordenado.map((a, i) => `
     ${i > 0 ? '<div class="npd-linea-arrow">→</div>' : ''}
     <div class="npd-station npd-station-${a.estado}">
@@ -162,11 +248,11 @@ function _renderLineaProduccionDia() {
     </div>`).join('');
 }
 
-function renderTimeline() {
+function renderTimeline(act) {
   const el = document.getElementById('d-tl-body');
-  document.getElementById('d-tl-badge').textContent = dashAct.length;
-  if (!dashAct.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día</div>'; return; }
-  el.innerHTML = dashAct.map(a => {
+  document.getElementById('d-tl-badge').textContent = act.length;
+  if (!act.length) { el.innerHTML = '<div class="dc-empty">Sin actividades este día</div>'; return; }
+  el.innerHTML = act.map(a => {
     const start = tMin(a.ini);
     const end = a.fin !== '—' ? tMin(a.fin) : Math.min(1439, start + (a.durMin || 15));
     const left = (start / 1440 * 100).toFixed(2), width = Math.max(0.3, (end - start) / 1440 * 100).toFixed(2);
@@ -180,21 +266,15 @@ function renderTimeline() {
 async function renderTrendChart() {
   const start = shiftDate(currentDashDate, -6);
   const { data: actRows, error } = await supabase.from('actividades')
-    .select('codigo, fecha, peso_ingreso, peso_salida').gte('fecha', start).lte('fecha', currentDashDate);
+    .select('fecha, peso_ingreso, peso_salida').gte('fecha', start).lte('fecha', currentDashDate);
   if (error) return;
-  const codigos = actRows.map(r => r.codigo);
-  const costRows = codigos.length
-    ? (await supabase.from('costos').select('actividad_codigo, total').in('actividad_codigo', codigos)).data || []
-    : [];
-  const costByCod = Object.fromEntries(costRows.map(c => [c.actividad_codigo, parseFloat(c.total) || 0]));
   const days = Array.from({ length: 7 }, (_, i) => shiftDate(start, i));
-  const rendArr = [], costoArr = [];
+  const rendArr = [];
   days.forEach(d => {
     const rows = actRows.filter(r => r.fecha === d);
     const ing = rows.reduce((s, r) => s + (parseFloat(r.peso_ingreso) || 0), 0);
     const sal = rows.reduce((s, r) => s + (parseFloat(r.peso_salida) || 0), 0);
     rendArr.push(ing > 0 ? +(sal / ing * 100).toFixed(1) : null);
-    costoArr.push(rows.reduce((s, r) => s + (costByCod[r.codigo] || 0), 0));
   });
 
   if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
@@ -204,8 +284,7 @@ async function renderTrendChart() {
     data: {
       labels: days.map(d => d.slice(5)),
       datasets: [
-        { label: 'Rendimiento %', data: rendArr, borderColor: '#16a34a', backgroundColor: '#16a34a', yAxisID: 'y', tension: .3, spanGaps: true },
-        { label: 'Costo total (S/.)', data: costoArr, borderColor: '#7c3aed', backgroundColor: '#7c3aed', yAxisID: 'y1', tension: .3 },
+        { label: 'Rendimiento %', data: rendArr, borderColor: '#16a34a', backgroundColor: '#16a34a', tension: .3, spanGaps: true },
       ],
     },
     options: {
@@ -213,8 +292,7 @@ async function renderTrendChart() {
       plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 11, padding: 10 } } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5A7FA8' } },
-        y: { position: 'left', title: { display: true, text: '%' }, ticks: { font: { size: 10 } } },
-        y1: { position: 'right', title: { display: true, text: 'S/.' }, grid: { drawOnChartArea: false }, ticks: { font: { size: 10 } } },
+        y: { title: { display: true, text: '%' }, ticks: { font: { size: 10 } } },
       },
     },
   });
@@ -224,8 +302,8 @@ async function renderTrendChart() {
 // PRODUCCIÓN POR NÚMERO DE PARTE — vista de maquila: un NP puede tardar
 // varios días en cerrarse, así que esto NO se filtra por día como el
 // resto del dashboard. Se calcula en el cliente a partir de los datos
-// que ya están completos en memoria (m1Data/actividadesDB/costosDB/
-// numerosParteDB no tienen filtro de fecha) — sin consultas nuevas.
+// que ya están completos en memoria (m1Data/actividadesDB/numerosParteDB
+// no tienen filtro de fecha) — sin consultas nuevas.
 // Hacer clic en un NP abre su detalle completo (ver npDetalle.js).
 // ═══════════════════════════════
 function _calcularProduccionPorNP() {
@@ -238,13 +316,10 @@ function _calcularProduccionPorNP() {
     const actN = actividadesDB.filter(a => a.np === n.nombre);
     const mp = lotesN.reduce((s, l) => s + (l.peso || 0), 0);
     const merma = actN.reduce((s, a) => s + (a.merma || 0), 0);
-    // Solo costo de máquina de las actividades de este NP — los costos del
-    // día (personal, canastillas, combustible) no se prorratean por NP.
-    const costo = actN.reduce((s, a) => s + costoMaquinaActividad(a) + (costosDB[a.id]?.total || 0), 0);
     return {
       nombre: n.nombre, cliente: n.cliente || '', estado: n.estado,
       fechaApertura: n.fechaApertura, fechaCierre: n.fechaCierre,
-      mp, merma, costo, nActividades: actN.length,
+      mp, merma, nActividades: actN.length,
     };
   });
 }
@@ -268,7 +343,6 @@ export function renderProduccionPorNP() {
         </div>
         <div class="np-prod-stat"><div class="np-prod-stat-v">${n.mp.toFixed(0)} kg</div><div class="np-prod-stat-l">Mat. prima</div></div>
         <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--orange)">${n.merma.toFixed(0)} kg</div><div class="np-prod-stat-l">Merma</div></div>
-        <div class="np-prod-stat"><div class="np-prod-stat-v" style="color:var(--b600)">${fmt(n.costo)}</div><div class="np-prod-stat-l">Costo máquina</div></div>
         <span class="np-prod-chev">→</span>
       </div>
     </div>`;
