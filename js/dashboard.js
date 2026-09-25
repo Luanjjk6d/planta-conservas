@@ -117,9 +117,8 @@ function _flujoProduccion(act) {
   });
 }
 
-function _renderFlujoProduccion(act) {
+function _renderFlujoProduccion(flujo) {
   const el = document.getElementById('d-flujo-body');
-  const flujo = _flujoProduccion(act);
   document.getElementById('d-flujo-badge').textContent = flujo.length;
   if (!flujo.length) { el.innerHTML = '<div class="dc-empty">Sin datos</div>'; return; }
   el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
@@ -134,6 +133,135 @@ function _renderFlujoProduccion(act) {
       <td>${f.velocidad != null ? f.velocidad.toFixed(0) + ' kg/h' : '<span class="tbl-empty">—</span>'}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+}
+
+// Productividad por proceso — usa el mismo agrupado que Flujo de
+// producción, sumando además horas-hombre (personal × horas de CADA
+// actividad, no personal-total × horas-total, para no inflar el HH
+// cuando el personal varió entre actividades del mismo proceso).
+function _productividad(flujo, act) {
+  return flujo.map(f => {
+    const actsProc = act.filter(a => a.proc === f.proc);
+    const personal = actsProc.reduce((s, a) => s + (a.totalPersonal || 0), 0);
+    const hh = actsProc.reduce((s, a) => s + (a.totalPersonal || 0) * (a.durHoras || 0), 0);
+    return { proc: f.proc, kgH: f.velocidad, personal, hh, kgHH: hh > 0 ? f.sal / hh : null };
+  });
+}
+
+function _renderProductividad(flujo, act) {
+  const el = document.getElementById('d-prod-body');
+  const prod = _productividad(flujo, act);
+  document.getElementById('d-prod-badge').textContent = prod.length;
+  if (!prod.length) { el.innerHTML = '<div class="dc-empty">Sin datos</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Proceso</th><th>kg/h</th><th>N° trabajadores</th><th>Horas-hombre</th><th>kg/HH</th></tr></thead>
+    <tbody>${prod.map(p => `<tr>
+      <td class="tbl-main">${esc(p.proc)}</td>
+      <td>${p.kgH != null ? p.kgH.toFixed(0) + ' kg/h' : '<span class="tbl-empty">—</span>'}</td>
+      <td>${p.personal || '<span class="tbl-empty">—</span>'}</td>
+      <td>${p.hh > 0 ? p.hh.toFixed(1) : '<span class="tbl-empty">—</span>'}</td>
+      <td>${p.kgHH != null ? p.kgHH.toFixed(1) + ' kg/HH' : '<span class="tbl-empty">Sin datos</span>'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ───────── Real vs Histórico ─────────
+// "Producción comparable" = un NP distinto (con el mismo producto/especie
+// y el mismo proceso). Se agrupan sus actividades para calcular sus
+// propios rendimiento/kg-h/kg-HH, y se promedian las últimas 5.
+function _productoDeNp(np) {
+  return m1Data.find(l => l.np === np)?.prod || null;
+}
+
+function _historicoComparable(producto, proceso, npExcluir) {
+  const porNp = new Map();
+  actividadesDB.forEach(a => {
+    if (a.proc !== proceso || a.np === npExcluir) return;
+    if (_productoDeNp(a.np) !== producto) return;
+    if (!porNp.has(a.np)) porNp.set(a.np, { ing: 0, sal: 0, durMin: 0, hh: 0, fechaMax: a.fecha });
+    const g = porNp.get(a.np);
+    g.ing += a.ping || 0; g.sal += a.psal || 0; g.durMin += a.durMin || 0;
+    g.hh += (a.totalPersonal || 0) * (a.durHoras || 0);
+    if (a.fecha > g.fechaMax) g.fechaMax = a.fecha;
+  });
+  return [...porNp.values()]
+    .map(g => {
+      const horas = g.durMin / 60;
+      return {
+        fecha: g.fechaMax,
+        rendimiento: g.ing > 0 ? g.sal / g.ing * 100 : null,
+        kgH: horas > 0 ? g.sal / horas : null,
+        kgHH: g.hh > 0 ? g.sal / g.hh : null,
+      };
+    })
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 5);
+}
+
+function _promedio(arr, key) {
+  const v = arr.map(x => x[key]).filter(x => x != null);
+  return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+}
+
+function _realVsHistorico(act) {
+  const porNpProc = new Map();
+  act.forEach(a => {
+    if (!(a.ping > 0 || a.psal > 0)) return;
+    const key = (a.np || '—') + '|' + a.proc;
+    if (!porNpProc.has(key)) porNpProc.set(key, { np: a.np, proc: a.proc, ing: 0, sal: 0, durMin: 0, hh: 0 });
+    const g = porNpProc.get(key);
+    g.ing += a.ping || 0; g.sal += a.psal || 0; g.durMin += a.durMin || 0;
+    g.hh += (a.totalPersonal || 0) * (a.durHoras || 0);
+  });
+  return [...porNpProc.values()].map(g => {
+    const horas = g.durMin / 60;
+    const hoy = {
+      rendimiento: g.ing > 0 ? g.sal / g.ing * 100 : null,
+      kgH: horas > 0 ? g.sal / horas : null,
+      kgHH: g.hh > 0 ? g.sal / g.hh : null,
+    };
+    const producto = _productoDeNp(g.np);
+    const historico = producto ? _historicoComparable(producto, g.proc, g.np) : [];
+    const suficiente = historico.length >= 3;
+    return {
+      np: g.np, proc: g.proc, producto, hoy, nHistorico: historico.length, suficiente,
+      histProm: suficiente ? { rendimiento: _promedio(historico, 'rendimiento'), kgH: _promedio(historico, 'kgH'), kgHH: _promedio(historico, 'kgHH') } : null,
+    };
+  });
+}
+
+function _flechaVariacion(delta) {
+  if (delta == null) return '';
+  if (delta > 0) return '<span style="color:var(--green)">↑</span>';
+  if (delta < 0) return '<span style="color:var(--red)">↓</span>';
+  return '<span style="color:var(--muted)">→</span>';
+}
+
+function _rvhFila(label, hoyVal, histVal, unidad, esPuntos) {
+  if (hoyVal == null) return '';
+  if (histVal == null) return `<div class="di-row"><span class="di-l">${label}</span><span class="di-v">${hoyVal.toFixed(1)}${unidad}</span></div>`;
+  const delta = hoyVal - histVal;
+  const deltaTxt = esPuntos
+    ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`
+    : `${delta >= 0 ? '+' : ''}${(delta / histVal * 100).toFixed(1)}%`;
+  return `<div class="di-row"><span class="di-l">${label}</span><span class="di-v">${hoyVal.toFixed(1)}${unidad} <span style="color:var(--muted);font-weight:400">(hist. ${histVal.toFixed(1)}${unidad})</span> ${_flechaVariacion(delta)} ${deltaTxt}</span></div>`;
+}
+
+function _renderRealVsHistorico(act) {
+  const el = document.getElementById('d-rvh-body');
+  const grupos = _realVsHistorico(act);
+  document.getElementById('d-rvh-badge').textContent = grupos.length;
+  if (!grupos.length) { el.innerHTML = '<div class="dc-empty">Sin datos</div>'; return; }
+  el.innerHTML = `<div class="dg">${grupos.map(g => `
+    <div class="rvh-card">
+      <div class="rvh-hdr">${esc(g.proc)}${g.producto ? ' — ' + esc(g.producto) : ''}<span class="rvh-np">NP ${esc(g.np || '—')}</span></div>
+      ${!g.suficiente
+      ? '<div class="dc-empty">Histórico insuficiente</div>'
+      : `${_rvhFila('Rendimiento', g.hoy.rendimiento, g.histProm.rendimiento, '%', true)}
+         ${_rvhFila('kg/h', g.hoy.kgH, g.histProm.kgH, '', false)}
+         ${_rvhFila('kg/HH', g.hoy.kgHH, g.histProm.kgHH, '', false)}
+         <div class="rvh-nota">vs. promedio de ${g.nHistorico} ${g.nHistorico !== 1 ? 'producciones anteriores' : 'producción anterior'} de ${esc(g.producto)} en ${esc(g.proc)}</div>`}
+    </div>`).join('')}</div>`;
 }
 
 function _renderTodo() {
@@ -193,7 +321,10 @@ function _renderTodo() {
     <div class="di-row"><span class="di-l">Tiempo finalizado</span><span class="di-v">${mHM(porEstado.fin)}</span></div>`;
   }
 
-  _renderFlujoProduccion(act);
+  const flujo = _flujoProduccion(act);
+  _renderFlujoProduccion(flujo);
+  _renderProductividad(flujo, act);
+  _renderRealVsHistorico(act);
   renderTimeline(act);
 
   // Merma por proceso
